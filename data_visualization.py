@@ -97,10 +97,7 @@ def data_gathering_dict(folder_path, joints_to_append=None):
                     # If there's a joints_to_append AND the name of the joint is in joints_to_append, do it
                     if (not joints_to_append) or (joints_to_append and splitted_line[0] in joints_to_append):
                         # setdefault() append to they value if the key exists, else it adds the key and append
-                        if 'ang' in filename:
-                            data.setdefault(splitted_line[0], []).append(math.degrees(float(splitted_line[1])))
-                        else:
-                            data.setdefault(splitted_line[0], []).append(float(splitted_line[1]))
+                        data.setdefault(splitted_line[0], []).append(float(splitted_line[1]))
                     
 
     return data
