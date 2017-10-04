@@ -20,35 +20,6 @@ import sklearn.cluster as cl
 
 from fastdtw import fastdtw
 
-# DONE / Watch 110th frame (motion 10, angular speed)
-# DONE / Mean speed for all joints
-
-# Demander à Pierre de réserver les salles TD les mardis matin
-# DONE / Liste propriété à relever/récupérer
-
-# NOPE / speeds, not positions (ressortir les clusters en mouvement (centroid to motion))
-# mail Nico conf ML
-
-
-
-# NOPE / mouvement brut
-# TODO / angular speed " offset "
-# DONE / test du protocole avec des doctorants
-# DONE / questionnaire complet (pré et post)
-# DONE / Cut frames with Motion Builder
-# DONE / Algo recalcul de n valeurs (diviser mouvement en n parties, calcul de vitesse moyenne sur chaque partie)
-# DONE / Profiling sur l'export des data
-# TODO / Même cobaye : si clustering (2) réussi, centroide = moyenne ?
-
-# DONE / dtw
-
-
-# DONE / Envoyer mail à Olivier pour le matos
-# DONE / envoyer le protocole
-# TODO / Trouver et tester des propriétés (ex : seulement le bras, ou alors le bras la main, la distance de la bouteille)
-# TODO / Faire des tests avec d'autres gens
-# TODO / Tester gant avec des petites mains
-# TODO / Diapo expliquer clustering de A à Z (petit cours, en gros) (puis transiter sur notre cas des mouvements)
 
 def bvh_parser(folder):
     pass
@@ -119,33 +90,12 @@ def data_gathering_dict(folder_path, joints_to_append=None):
                 # if there's actually something (IF not_empty AND first_value AND second_value)
                 if splitted_line and splitted_line[0] and splitted_line[1]:
 
-                    # If it's alreayd into the ordered dict, append
-                    if splitted_line[0] in data:
-                        pdb.set_trace()
-                        if 'ang' in filename:
-                            try:
-                                data[splitted_line[0]].append(math.degrees(float(splitted_line[1])))
-                            except:
-                                pdb.set_trace()
-                                print('Error occured while appending angular speed value.')             
-                        else:
-                            try:
-                                data[splitted_line[0]].append(float(splitted_line[1]))
-                            except:
-                                print('Error occured while appending linear speed value.')
-                            
-                    # Else, add a new value
+                    # setdefault() append to they value if the key exists, else it adds the key and append
+                    if 'ang' in filename:
+                        data.setdefault(splitted_line[0], []).append(math.degrees(float(splitted_line[1])))
                     else:
-                        if 'ang' in filename:
-                            try:
-                                data[splitted_line[0]] = [math.degrees(float(splitted_line[1]))]
-                            except:
-                                print('Error while adding angular speed value.')
-                        else:
-                            try:
-                                data[splitted_line[0]] = [float(splitted_line[1])]
-                            except:
-                                print('Error while adding linear speed value.')
+                        data.setdefault(splitted_line[0], []).append(float(splitted_line[1]))
+                    
 
     return data
 
