@@ -20,6 +20,7 @@ import sklearn.cluster as cl
 
 from fastdtw import fastdtw
 
+#TODO : split visualization and data processing
 
 def bvh_parser(folder):
     pass
