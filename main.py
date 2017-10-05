@@ -4,7 +4,8 @@ import pdb
 from data_visualization import multifiles_visualization
 from tools import flatten_list, motion_dict_to_list, natural_keys
 from data_import import data_gathering_dict
-from algo.kmeans_algo import kmeans_algo
+from algos.kmeans_algo import kmeans_algo
+from data_visualization import visualization
 
 def test_mean_speed_intervals(motion_type="gimbal"):
     folder = r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Speed'
@@ -92,7 +93,7 @@ def display_res(res, names):
 
 
 def main():
-    # visualization()
+    visualization()
     # multifiles_visualization()
     # mean_speed()
     
@@ -104,7 +105,7 @@ def main():
     # kmeans_algo(new_data)
     # ml()
     # test_mean_speed_intervals("cut")
-    test_mean_speed_intervals_batch(19, motion_type='cut')
+    # test_mean_speed_intervals_batch(19, motion_type='cut')
 
 if __name__ == '__main__':
     main()

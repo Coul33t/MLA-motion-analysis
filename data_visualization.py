@@ -11,10 +11,12 @@ import matplotlib.cm as cm
 from scipy.signal import savgol_filter, correlate
 
 from data_import import data_gathering_dict
+
+from tools import natural_keys
 #TODO : better data visualization function
     
 
-def visualization(motion_type="gimbal"):
+def visualization(motion_type="gimbal", joints_to_visualize=None):
     folder_path_lin = r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Speed\throw_5_gimbal_smooth_16\lin'
 
     interframe_time = 0.017
@@ -27,36 +29,36 @@ def visualization(motion_type="gimbal"):
     ls.set_xlabel('Time (s)')
     ls.set_ylabel('Linear speed (m/s)')
 
-    y = data_lin.get('Hips')
-    y2 = data_lin.get('RightHand')
-    y3 = data_lin.get('RightShoulder')
-    y4 = data_lin.get('RightForeArm')
-    y5 = data_lin.get('RightArm')
 
-    x = np.linspace(0, len(y), len(y), endpoint=False)
+    y = []
 
-    blue_patch = mpatches.Patch(color='blue', label='Hips')
-    red_patch = mpatches.Patch(color='red', label='RightHand')
-    green_patch = mpatches.Patch(color='green', label='RightShoulder')
-    orange_patch = mpatches.Patch(color='orange', label='RightForeArm')
-    violet_patch = mpatches.Patch(color='violet', label='RightArm')
+    if joints_to_visualize:
+        for joint in joints_to_visualize:
+            y.append((joint, data_lin.get(joint)))
 
-    ls.legend(handles=[blue_patch, red_patch, green_patch, orange_patch, violet_patch])
+    else:
+        for joint in data_lin.keys():
+            y.append((joint, data_lin.get(joint)))
 
-    ls.plot(x, y, linestyle='solid', color='blue')
-    ls.plot(x, y2, linestyle='solid', color='red')
-    ls.plot(x, y3, linestyle='solid', color='green')
-    ls.plot(x, y4, linestyle='solid', color='orange')
-    ls.plot(x, y5, linestyle='solid', color='violet')
+
+    x = np.linspace(0, len(y[0][1]), len(y[0][1]), endpoint=False)
+
+    # ----- COLORS ------ #
+
+    color=iter(cm.rainbow(np.linspace(0,1,len(y))))
+
+    # Yet another Python awesome trick
+    # https://stackoverflow.com/questions/849369/how-do-i-enumerate-over-a-list-of-tuples-in-python
+    for i, (joint_name, values) in enumerate(y):
+        ls.plot(x, values, color=next(color), label=joint_name)
    
     plt.show()
 
 
-def multifiles_visualization(motion_type="gimbal"):
+def multifiles_visualization(motion_type="gimbal", joints_to_visualize=None):
     folder = r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Speed'
 
     data_lin = []
-    data_ang = []
     
     subdirectories = os.listdir(folder)
     subdirectories.sort(key=natural_keys)
@@ -65,6 +67,36 @@ def multifiles_visualization(motion_type="gimbal"):
         if motion_type in name:
             data_lin.append(data_gathering_dict(folder+'\\'+name+'\\lin'))
 
+    data = []
+
+    for dic in data_lin:
+        if joints_to_visualize:
+            for joint in joints_to_visualize:
+                data.append(dic.get(joint))
+        else:
+            for joint in dic.keys():
+                data.append(dic.get(joint))
+
+    fig = plt.figure()
+
+    # ---------- Linear speed ----------
+    ls = fig.add_subplot(111)
+
+    ls.set_xlabel('Time (s)')
+    ls.set_ylabel('Linear speed (m/s)')
+
+    color=iter(cm.rainbow(np.linspace(0,1,len(data))))
+
+    for i in range(len(data)):
+        c=next(color)
+        x = np.linspace(0, len(data[i]), len(data[i]), endpoint=False)
+        ysavgol = savgol_filter(data[i], 51, 3)
+        ls.plot(x, ysavgol, linestyle='solid', color=c)
+
+    plt.show()
+
+
+def test():
     data = []
     mean_len = []
 
@@ -96,24 +128,3 @@ def multifiles_visualization(motion_type="gimbal"):
 
     print('TEST : {}'.format(np.argmax(correlate(data[1], data[1]))))
     pdb.set_trace()
-
-    fig = plt.figure()
-
-    # ---------- Linear speed ----------
-    ls = fig.add_subplot(111)
-
-    ls.set_xlabel('Time (s)')
-    ls.set_ylabel('Linear speed (m/s)')
-
-    color=iter(cm.rainbow(np.linspace(0,1,len(data))))
-
-    patches = []
-
-    for i in range(len(data)):
-        c=next(color)
-        patches.append(mpatches.Patch(color=c, label=i))
-        x = np.linspace(0, len(data[i]), len(data[i]), endpoint=False)
-        ysavgol = savgol_filter(data[i], 51, 3)
-        ls.plot(x, ysavgol, linestyle='solid', color=c)
-
-    plt.show()
