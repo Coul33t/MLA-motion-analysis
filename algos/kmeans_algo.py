@@ -1,35 +1,18 @@
 from sklearn.cluster import KMeans
 
-def kmeans_algo(data, verbose=False):
+def kmeans_algo(data, algo='k-means++', verbose=False):
 
     algo_accuracy = []
 
-    # Kmeans initialization type
-    init = ['kmeans++', 'random', 'ndarray']
+    # Kmeans initialization type:
+    # 'k-means++', 'random', 'ndarray'
+    
+    if verbose:
+        print("\n\n{}\n".format(algo))
 
-    for algo in init:
-        
-        accuracy = []
-        
-        if verbose:
-            print("\n\n{}\n".format(algo))
-
-        for i in range(10):
-            
-            if verbose: 
-                print('Iteration {} ... '.format(i+1), end=' ')
-
-            res = KMeans(2, 'k-means++', n_init=20, max_iter=1000).fit(list(data))
+    res = KMeans(2, algo, n_init=20, max_iter=1000).fit(list(data))
 
     return res
-            # TODO: adhoc bad
-    #         true_labels = [0,0,1,0,0,     0,0,0,0,1,      1,0,0,0,0,      0,1,1,0,1]
-
-    #         diff = []
-    #         for i,_ in enumerate(true_labels):
-    #             diff.append(abs(true_labels[i]-res.labels_[i]))
-
-    #         accuracy.append(max(diff.count(0)/len(diff), diff.count(1)/len(diff)))
             
     #         if verbose:
     #             print('Done.')

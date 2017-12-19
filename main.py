@@ -3,6 +3,8 @@ import statistics as stat
 
 import pdb
 
+from sklearn.decomposition import PCA
+
 from data_visualization import multifiles_visualization
 from tools import flatten_list, motion_dict_to_list, natural_keys, select_joint
 from data_import import data_gathering_dict, return_data, adhoc_gathering
@@ -82,22 +84,65 @@ def test_mean_speed_intervals_batch(size, motion_type='gimbal', joints_to_append
 
 def test_full_batch(path, joints_to_append=None):
     # adhoc because for the moment, we have multiple segments
-    data = adhoc_gathering(path, joints_to_append)
+    original_data = adhoc_gathering(path, joints_to_append)
 
-    data_right_hand = []
+    selected_data = []
 
     # Extracting right hand values
-    for motion in data:
-        data_right_hand.append(motion['RightHand'])
+    for motion in original_data:
+        selected_data.append([motion['RightHand'], motion['RightArm'], motion['RightForeArm'], motion['RightShoulder']])
 
     features = []
+    # ----- MEAN AND MAX ------
+    # Here, we transform the features into mean and max speed (2 features)
+    
+    # for motion in selected_data:
+    #     feat_to_add = []
+    #     for joint in motion:
+    #         feat_to_add.append([stat.mean(joint), max(joint)])
+    #     features.append(flatten_list(feat_to_add))
 
-    for motion in data_right_hand:
-        features.append([stat.mean(motion), max(motion)])
+    # res = kmeans_algo(features)
+    # print('{}'.format(LOUP_rate(res.labels_)))
 
-    res = kmeans_algo(features)
-    pdb.set_trace()
+    # ----- MEAN AND MAX ------
 
+    # ----- FULL DATA -----
+    # for motion in selected_data:
+    #     features.append(flatten_list(motion))
+    # res = kmeans_algo(features)
+    # print('{}'.format(LOUP_rate(res.labels_)))
+
+    # ----- FULL DATA -----
+
+    # ----- PCA TESTS -----
+    # rates = []
+    # for i in range(len(flatten_list(selected_data[0])) - 1):
+        
+    #     features = []
+    #     for motion in selected_data:
+    #         features.append(flatten_list(motion))
+
+    #     pca = PCA(n_components=i+1)
+    #     pca.fit(features)
+    #     features = pca.transform(features)
+
+    #     res = kmeans_algo(features)
+        
+    #     rates.append((LOUP_rate(res.labels_), i+1))
+    #     # print('nb features: {} / {}'.format(i+1, rate))
+
+    # print('Best: {} ({} features)'.format(max(rates, key=lambda item:item[0])[0], max(rates, key=lambda item:item[0])[1]))
+    # ----- PCA TESTS -----
+   
+def LOUP_rate(labels):
+    true_labels = [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1]
+
+    diff = []
+    for j,_ in enumerate(true_labels):
+        diff.append(abs(true_labels[j]-labels[j]))
+
+    return max(diff.count(0)/len(diff), diff.count(1)/len(diff))
 
 def display_res(result_list):
     for result in result_list:
@@ -125,7 +170,8 @@ def main():
     # display_res(res)
     # test_mean_speed_intervals_batch(19, motion_type='cut')
 
-    test_full_batch(r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Test_Python')
+    test_full_batch(r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Batch_Test')
 
 if __name__ == '__main__':
     main()
+
