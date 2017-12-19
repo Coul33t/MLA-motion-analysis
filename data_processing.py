@@ -1,4 +1,4 @@
-import OrderedDict
+from collections import OrderedDict
 
 def delta_computing(data_dic):
     delta_dict = []
@@ -32,3 +32,23 @@ def mean_speed(data_dic):
         mean_dict.append(new_dic)
     
     return mean_dict
+
+
+def select_joint(data, joints_to_keep):
+    """
+        Returns only a few joints from a frame, in a motion.
+        data must be a list of OrderectDict (= 1 motion)
+    """
+    returned_data = OrderedDict()
+
+    for joint in joints_to_keep:
+
+        joint_values = []
+
+        for frame in data:
+
+            joint_values.append(frame[joint])
+
+        returned_data[joint] = joint_values
+
+    return returned_data

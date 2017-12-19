@@ -8,30 +8,34 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
-from scipy.signal import savgol_filter, correlate
+from scipy.signal import savgol_filter, savgol_coeffs, correlate
+
+from scipy.signal import butter, lfilter
+
 
 from data_import import data_gathering_dict
 
 from tools import natural_keys
 #TODO : better data visualization function
-    
 
-def visualization(motion_type="gimbal", joints_to_visualize=None):
-    folder_path_lin = r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Speed\throw_5_gimbal_smooth_16\lin'
+
+def visualization(motion_type="gimbal", joints_to_visualize=None, savgol=False):
+    folder_path_lin = r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Speed\Damien\TEST_CUT_MAX'
+    # folder_path_lin = r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Speed\Damien_1_Char00\lin'
 
     interframe_time = 0.017
 
     data_lin = data_gathering_dict(folder_path_lin)
 
     fig = plt.figure()
-    ls = fig.add_subplot(211)
+    ls = fig.add_subplot(111)
 
     ls.set_xlabel('Time (s)')
     ls.set_ylabel('Linear speed (m/s)')
 
 
     y = []
-
+    
     if joints_to_visualize:
         for joint in joints_to_visualize:
             y.append((joint, data_lin.get(joint)))
@@ -40,22 +44,29 @@ def visualization(motion_type="gimbal", joints_to_visualize=None):
         for joint in data_lin.keys():
             y.append((joint, data_lin.get(joint)))
 
-
     x = np.linspace(0, len(y[0][1]), len(y[0][1]), endpoint=False)
 
     # ----- COLORS ------ #
 
     color=iter(cm.rainbow(np.linspace(0,1,len(y))))
 
-    # Yet another Python awesome trick
+    # YAPAT (Yet another Python awesome trick)
     # https://stackoverflow.com/questions/849369/how-do-i-enumerate-over-a-list-of-tuples-in-python
+
     for i, (joint_name, values) in enumerate(y):
-        ls.plot(x, values, color=next(color), label=joint_name)
+        my_color = next(color)
+        print(joint_name)
+        
+        if savgol:
+            print(savgol_coeffs(21, 3))
+            values = savgol_filter(values, 21, 3)
+            
+        ls.plot(x, values, color=my_color, label=joint_name)
    
     plt.show()
 
 
-def multifiles_visualization(motion_type="gimbal", joints_to_visualize=None):
+def multifiles_visualization(motion_type="gimbal", joints_to_visualize=None, savgol=False):
     folder = r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Speed'
 
     data_lin = []
@@ -90,8 +101,11 @@ def multifiles_visualization(motion_type="gimbal", joints_to_visualize=None):
     for i in range(len(data)):
         c=next(color)
         x = np.linspace(0, len(data[i]), len(data[i]), endpoint=False)
-        ysavgol = savgol_filter(data[i], 51, 3)
-        ls.plot(x, ysavgol, linestyle='solid', color=c)
+        
+        if savgol:
+            ls.plot(x, savgol_filter(data[i], 51, 3), linestyle='solid', color=c)
+        else:
+            ls.plot(x, data[i], linestyle='solid', color=c)
 
     plt.show()
 

@@ -1,17 +1,19 @@
 import os
+import statistics as stat
+
 import pdb
 
 from data_visualization import multifiles_visualization
-from tools import flatten_list, motion_dict_to_list, natural_keys
-from data_import import data_gathering_dict
+from tools import flatten_list, motion_dict_to_list, natural_keys, select_joint
+from data_import import data_gathering_dict, return_data, adhoc_gathering
 from algos.kmeans_algo import kmeans_algo
 from data_visualization import visualization
 
-def test_mean_speed_intervals(motion_type="gimbal"):
+
+def test_mean_speed_intervals(motion_type="gimbal", joints_to_append=None):
     folder = r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Speed'
 
-    data_lin = []
-    data_lin_2 = []
+    data = []
 
     subdirectories = os.listdir(folder)
     subdirectories.sort(key=natural_keys)
@@ -19,16 +21,17 @@ def test_mean_speed_intervals(motion_type="gimbal"):
     for name in subdirectories:
         if motion_type in name:
             print("Appending {}".format(name))
-            data_lin.append(flatten_list(motion_dict_to_list(data_gathering_dict(folder+'\\'+name+'\\lin_mean_10_cut'))))
+            data.append(flatten_list(motion_dict_to_list(data_gathering_dict(folder+'\\'+name+'\\lin_mean_10_cut', joints_to_append))))
 
-    pdb.set_trace()
-    kmeans_algo(data_lin)
-
-
-
+    pdb.set_trace() 
+    
+    return kmeans_algo(data)
 
 
-def test_mean_speed_intervals_batch(size, motion_type='gimbal'):
+
+
+
+def test_mean_speed_intervals_batch(size, motion_type='gimbal', joints_to_append=None):
     folder = r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Speed'
 
     subdirectories = os.listdir(folder)
@@ -58,7 +61,7 @@ def test_mean_speed_intervals_batch(size, motion_type='gimbal'):
                     print(subname)
 
                     # Append data
-                    data_lin[i].append(flatten_list(motion_dict_to_list(data_gathering_dict(folder+'\\'+name+'\\' + subname))))
+                    data_lin[i].append(flatten_list(motion_dict_to_list(data_gathering_dict(folder+'\\'+name+'\\' + subname, joints_to_append))))
                     i += 1
 
     res = []
@@ -68,33 +71,46 @@ def test_mean_speed_intervals_batch(size, motion_type='gimbal'):
     for i, different_cut in enumerate(data_lin):
         print('Batch : {}'.format(i))
         res.append(kmeans_algo(different_cut))
-        #res.append(affinity_propagation_algo(different_cut))
-        #res.append(mean_shift_algo(different_cut))
+        # res.append(affinity_propagation_algo(different_cut))
+        # res.append(mean_shift_algo(different_cut))
         
+    return res
 
-    #display_res(res, names)
+
+
+
+
+def test_full_batch(path, joints_to_append=None):
+    # adhoc because for the moment, we have multiple segments
+    data = adhoc_gathering(path, joints_to_append)
+
+    data_right_hand = []
+
+    # Extracting right hand values
+    for motion in data:
+        data_right_hand.append(motion['RightHand'])
+
+    features = []
+
+    for motion in data_right_hand:
+        features.append([stat.mean(motion), max(motion)])
+
+    res = kmeans_algo(features)
     pdb.set_trace()
 
 
-
-
-
-def display_res(res, names):
-    for i,batch in enumerate(res):
-        print('\n-------------------------------')
-        print('New batch : {}'.format(names[i]))
-        print('-------------------------------')
-        for algo in batch:
-            pdb.set_trace()
-            print('{} : [min: {}] [max: {}] [mean: {}]'.format(algo[0], min(algo[1]), max(algo[1]), sum(algo[1])/len(algo[1])))
+def display_res(result_list):
+    for result in result_list:
+        print('{} : [min: {}] [max: {}] [mean: {}]'.format(result[0], min(result[1]), max(result[1]), sum(result[1])/len(result[1])))
 
 
 
 
 
 def main():
-    visualization()
-    # multifiles_visualization()
+    # visualization(joints_to_visualize=['LeftShoulder', 'LeftForeArm', 'LeftArm', 'LeftHand'], savgol=True)
+    # visualization(joints_to_visualize=['LeftHand'], savgol=False)
+    # multifiles_visualization(joints_to_visualize=['Head', 'LeftShoulder', 'LeftForeArm', 'LeftArm', 'LeftHand'])
     # mean_speed()
     
     # # Python can't lenny face :(
@@ -104,8 +120,12 @@ def main():
     # test_dtw()
     # kmeans_algo(new_data)
     # ml()
-    # test_mean_speed_intervals("cut")
+    # res = test_mean_speed_intervals("cut", joints_to_append=['Head', 'LeftShoulder', 'LeftForeArm', 'LeftArm', 'LeftHand'])
+    # pdb.set_trace()
+    # display_res(res)
     # test_mean_speed_intervals_batch(19, motion_type='cut')
+
+    test_full_batch(r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Test_Python')
 
 if __name__ == '__main__':
     main()
