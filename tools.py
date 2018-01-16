@@ -18,7 +18,7 @@ def natural_keys(text):
     http://nedbatchelder.com/blog/200712/human_sorting.html
     (See Toothy's implementation in the comments)
     """
-    return [ atoi(c) for c in re.split('(\d+)', text) ]
+    return [atoi(c) for c in re.split('(\d+)', text)]
 
 def flatten_list(list_to_flatten):
     return [item for sublist in list_to_flatten for item in sublist]
@@ -49,7 +49,7 @@ def merge_dict(list_of_dict):
 
 
 def select_joint(dic, joints_to_select):
-    
+
     selected_joints = OrderedDict()
 
     for key in dic.keys():
@@ -64,7 +64,6 @@ def flatten_data_struct(data):
         flatten the data struct extracted by return_data
         into something like that : [motion list[joint OrderedDict (full motion)]]
     """
-    motion_data = []
 
     # List of list (seg)
     for motion in data:
@@ -82,14 +81,6 @@ def flatten_data_struct(data):
 
                 else:
                     pass
-
-
-
-def features_list(list_of_dict):
-
-    for dic in list_of_dict:
-        pass
-        #for key in key_order:
 
 
 
