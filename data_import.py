@@ -1,5 +1,6 @@
 from tools import file_name_gathering, natural_keys, merge_dict
 from collections import OrderedDict
+import json
 
 import pdb
 import os
@@ -7,7 +8,9 @@ import os
 def data_gathering_dict(folder_path, joints_to_append=None):
     """
         Put the data from multiples files (in the folder folder_path) into a dictionnary.
+        Each key is associated with a set of values.
         joints_to_append is there if you want only certains joints.
+        Ex : {"Head":[0.25,0,1.25], "Neck":[0.15,0.10,0.75]}
     """
     file_list = file_name_gathering(folder_path)
 
@@ -52,7 +55,6 @@ def data_gathering_full(folder_path, joints_to_append=None):
             print(folder_path + '\\' + folder + '\\' + subfolders)
             full_data.append(data_gathering_dict(folder_path + '\\' + folder + '\\' + subfolders))
 
-    pdb.set_trace()
     return full_data
     
 
@@ -65,7 +67,7 @@ def adhoc_gathering(folder_path, joints_to_append=None):
         tmp_data = []
 
         for subfolders in return_files(folder_path + '\\' + folder, '.json', False):
-            tmp_data.append(data_gathering_dict(folder_path + '\\' + folder + '\\' + subfolders))
+            tmp_data.append(data_gathering_dict(folder_path + '\\' + folder + '\\' + subfolders, joints_to_append))
 
         tmp_data = merge_dict(tmp_data)
         full_data.append(tmp_data)
@@ -172,6 +174,30 @@ def return_data_with_names(f, joints_to_append=None):
                
     pdb.set_trace()
     return full_data
+
+def json_import(folder_path):
+    """
+        Import the data from json files
+        For each motion: [name, data]
+                                -> dict (k: Datatype, v: dict)
+                                                         -> dict (k: joint, v: values)
+    """
+    full_data = []
+
+    for folder in return_files(folder_path, 'default'):
+        for subfolders in return_files(folder_path + '\\' + folder, '.json', False):
+
+            file_list = file_name_gathering(folder_path + '\\' + folder + '\\' + subfolders)
+            file_list.sort(key=natural_keys)
+
+
+            for file in file_list:
+                with open(folder_path + '\\' + folder + '\\' + subfolders + '\\' + file, 'r') as f:
+                    full_data.append([file, json.load(f)])
+
+    pdb.set_trace()
+    return full_data
+
 
 
 if __name__ == '__main__':
