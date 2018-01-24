@@ -172,7 +172,6 @@ def return_data_with_names(f, joints_to_append=None):
 
         full_data.append([folder, motion_data])
                
-    pdb.set_trace()
     return full_data
 
 def json_import(folder_path):
@@ -184,7 +183,7 @@ def json_import(folder_path):
     """
     full_data = []
 
-    for folder in return_files(folder_path, 'default'):
+    for folder in return_files(folder_path, 'JSON_BATCH_TEST'):
         for subfolders in return_files(folder_path + '\\' + folder, '.json', False):
 
             file_list = file_name_gathering(folder_path + '\\' + folder + '\\' + subfolders)
@@ -195,7 +194,6 @@ def json_import(folder_path):
                 with open(folder_path + '\\' + folder + '\\' + subfolders + '\\' + file, 'r') as f:
                     full_data.append([file, json.load(f)])
 
-    pdb.set_trace()
     return full_data
 
 
