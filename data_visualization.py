@@ -162,6 +162,25 @@ def plot_2d_dual(data, true_class, clu_class, label1='NONE_1', label2='NONE_2'):
    
     plt.show()
 
+def plot_data_k_means(data):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    
+    
+
+    color=iter(cm.rainbow(np.linspace(0,1,len(data))))
+
+    for joint in data:
+        c = next(color)
+        y = [k[1] for k in data[joint]]
+        # clusters from 2 to 10
+        x = np.linspace(2, len(y)+1, len(y))
+
+        ax.plot(x, y, '-', color=c, label=joint)
+
+    plt.legend()
+    plt.show()
+
 def test():
     data = []
     mean_len = []
