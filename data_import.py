@@ -102,16 +102,16 @@ def file_gathering_dict(file_path, joints_to_append=None):
     return data
 
 
-def return_files(f, str_to_check='', present=True):
+def return_files(f, str_to_check=[''], present=True):
     """
         returns a list of files in a folder
         if str_to_check is or isn't in the names
         (default: all files)
     """
     if present:
-        return sorted([x for x in os.listdir(f) if str_to_check in x], key=natural_keys)
+        return sorted([x for x in os.listdir(f) if all(sub_str in x for sub_str in str_to_check)], key=natural_keys)
     else:
-        return sorted([x for x in os.listdir(f) if str_to_check not in x], key=natural_keys)
+        return sorted([x for x in os.listdir(f) if all(sub_str not in x for sub_str in str_to_check)], key=natural_keys)
 
 
 def return_data(f, joints_to_append=None):
@@ -174,16 +174,19 @@ def return_data_with_names(f, joints_to_append=None):
                
     return full_data
 
-def json_import(folder_path):
+def json_import(folder_path, folder_name=None):
     """
         Import the data from json files
         For each motion: [name, data]
                                 -> dict (k: Datatype, v: dict)
                                                          -> dict (k: joint, v: values)
     """
+    if not folder_name:
+        folder_name = ['JSON_BATCH_TEST']
+
     full_data = []
 
-    for folder in return_files(folder_path, 'JSON_BATCH_TEST'):
+    for folder in return_files(folder_path, folder_name):
         for subfolders in return_files(folder_path + '\\' + folder, '.json', False):
 
             file_list = file_name_gathering(folder_path + '\\' + folder + '\\' + subfolders)
