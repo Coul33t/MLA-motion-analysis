@@ -12,12 +12,13 @@ import matplotlib.pyplot as plt
 # Personnal packages
 from tools import flatten_list, motion_dict_to_list, natural_keys, select_joint
 from data_import import data_gathering_dict, return_data, adhoc_gathering, json_import
-from algos.kmeans_algo import kmeans_algo
+from algos.kmeans_algo import kmeans_algo, per_cluster_inertia, f_score_computing
 from data_visualization import visualization, plot_2d, plot_data_k_means
 from data_processing import delta_computing
 
 # Natural index (1 -> first element, opposed to array idx where 0 -> first element)
 GLOUP_SUCCESS = [1, 8, 19, 20, 22, 24, 25, 28, 32, 33, 39, 40, 47, 56, 57, 60, 73, 74, 77, 79, 83, 84, 95, 99, 100]
+DBRUN_SUCCESS = [2, 6, 10, 14, 15, 18, 21, 27, 29, 30, 44, 46, 48, 50, 59, 63, 64, 65, 69, 70, 71, 73, 74, 76, 77, 83, 86, 87, 88, 89, 90, 93, 97, 100]
 
 # OLD AND UNUSED (TODO:delete)
 def test_mean_speed_intervals(motion_type="gimbal", joints_to_append=None):
@@ -322,10 +323,10 @@ def test_full_batch_k_var(path, joint_to_use=None, verbose=False, to_file=False)
         output_file = open('output.txt', 'w')
 
     # Gathering the data
-    original_data = json_import(path)
+    original_data = json_import(path, ['JSON_BATCH_TEST', 'Damien'])
 
     # Wich data to keep
-    data_to_select = ['Speed', 'DiffSpeed']
+    data_to_select = ['Speed']
 
     # If there's no joint to select, then we take all of them
     if joint_to_use is None:
@@ -384,6 +385,13 @@ def test_full_batch_k_var(path, joint_to_use=None, verbose=False, to_file=False)
             # Actual k-means
             res = kmeans_algo(features, k=k)
 
+            # Computing the inertia for each cluster
+            clusters_inertia = per_cluster_inertia(features, res.cluster_centers_, res.labels_)
+
+            # Computing the f1-score (IF IT'S A 2 CLUSTER PROBLEM)
+            if k == 2:
+                f_score_computing(res.labels_, DBRUN_SUCCESS)
+
             # Checking the inertia for the sets
             if res.inertia_ < 50:
                 low_inertia.add(joint)
@@ -441,7 +449,7 @@ def clusters_composition(labels, verbose=False, output_file=None):
     # Get a list of clusters number
     cluster_nb = set(labels)
 
-    success = np.asarray(GLOUP_SUCCESS)
+    success = np.asarray(DBRUN_SUCCESS)
     # Switching from natural idx to array idx
     success = success - 1
 
