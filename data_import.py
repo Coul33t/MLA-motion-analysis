@@ -1,9 +1,13 @@
-from tools import file_name_gathering, natural_keys, merge_dict
-from collections import OrderedDict
 import json
 
 import pdb
 import os
+
+from collections import OrderedDict
+
+from tools import file_name_gathering, natural_keys, merge_dict
+from motion_classes.motion import *
+
 
 def data_gathering_dict(folder_path, joints_to_append=None):
     """
@@ -194,8 +198,18 @@ def json_import(folder_path, folder_name=None):
 
 
             for file in file_list:
+                
+                # Stripping the '.json'
+                motion = Motion(name=file[:-5])
+                motion.pre_processing_info = json.load(open(folder_path + '\\' + folder + '\\' + 'motion_information.json'))
+                motion.post_processing_info = json.load(open(folder_path + '\\' + folder + '\\' + 'segmentation_information.json'))
+
                 with open(folder_path + '\\' + folder + '\\' + subfolders + '\\' + file, 'r') as f:
-                    full_data.append([file, json.load(f)])
+                    json_file = json.load(f)
+                    for key in list(json_file.keys()):
+                        motion.add_datatype(key, json_file[key])
+
+                full_data.append(motion)
 
     return full_data
 
