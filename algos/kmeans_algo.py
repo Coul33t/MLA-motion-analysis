@@ -1,5 +1,5 @@
 from sklearn.cluster import KMeans
-from sklearn.metrics import f1_score
+from sklearn.metrics import f1_score, adjusted_mutual_info_score, adjusted_rand_score
 import numpy as np
 from scipy.spatial import distance
 import pdb
@@ -47,10 +47,6 @@ def f_score_computing(labels, true_labels):
             Precision = true positive / (true positive + false positive)
             Recall = true positive / (true positive + false negative)
 
-        For the moment, since I'm unable to think of a nice way to permute
-        the clusters' labels for more than 2 clusters, it only works for
-        2 clusters.
-
     """
 
     if not isinstance(labels, np.ndarray):
@@ -80,3 +76,53 @@ def f_score_computing(labels, true_labels):
 
 
     return f1_score(true_labels, labels)
+
+
+def adjusted_mutual_info_score_computing(labels, true_labels):
+    """
+        This methode returns the adjusted mutual info score of a 2 clusters clustering problem.
+
+    """
+
+    if not isinstance(labels, np.ndarray):
+        labels = np.asarray(labels)
+
+    if not isinstance(true_labels, np.ndarray):
+        true_labels = np.asarray(true_labels)
+
+    # 2 cases here: either true_labels is the label for each data,
+    # in which case len(labels) == len(true_labels), OR it is the
+    # array (natural indexes) telling where the success are; thus
+    # the need of a transformation
+    if len(labels) != len(true_labels):
+        tmp_true_labels = np.zeros( (len(labels)) )
+        # Switching from natural indexes to array indexes
+        tmp_true_labels[true_labels- 1] = 1
+        true_labels = tmp_true_labels.astype(int)
+
+    return adjusted_mutual_info_score(true_labels, labels)
+
+
+def adjusted_rand_score_computing(labels, true_labels):
+    """
+        This methode returns the adjusted rand score of a 2 clusters clustering problem.
+
+    """
+
+    if not isinstance(labels, np.ndarray):
+        labels = np.asarray(labels)
+
+    if not isinstance(true_labels, np.ndarray):
+        true_labels = np.asarray(true_labels)
+
+    # 2 cases here: either true_labels is the label for each data,
+    # in which case len(labels) == len(true_labels), OR it is the
+    # array (natural indexes) telling where the success are; thus
+    # the need of a transformation
+    if len(labels) != len(true_labels):
+        tmp_true_labels = np.zeros( (len(labels)) )
+        # Switching from natural indexes to array indexes
+        tmp_true_labels[true_labels- 1] = 1
+        true_labels = tmp_true_labels.astype(int)
+
+    return adjusted_rand_score(true_labels, labels)
