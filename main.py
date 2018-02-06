@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 # Personnal packages
 from tools import flatten_list, motion_dict_to_list, natural_keys, select_joint
 from data_import import data_gathering_dict, return_data, adhoc_gathering, json_import
-from algos.kmeans_algo import kmeans_algo, per_cluster_inertia, f_score_computing
+from algos.kmeans_algo import kmeans_algo, per_cluster_inertia, f_score_computing, adjusted_mutual_info_score_computing, adjusted_rand_score_computing
 from data_visualization import visualization, plot_2d, plot_data_k_means
 from data_processing import delta_computing
 
@@ -99,32 +99,24 @@ def test_mean_speed_intervals_batch(size, motion_type='gimbal', joints_to_append
 
 def joint_selection(data, joints_to_append):
     """
-        This function returns a list of desired joints data.
+        This function returns a list of desired joints data, from a list of Motion objects.
     """
 
-    # Joint selection
-    # List ( List (motion) [
-    #                       str (name), dict (datatype) [
-    #                                                    k:str (datatype name), v:dict (joints) [
-    #                                                                                            k: str (joint), v:liss[double] (values)
-    #                                                                                           ]
-    #                                                   ]
-    #                      ]
-    # )
     # We gonna switch from dict to OrederedDict, to ensure that each
     # features vector has the same joints order
     selected_data = []
 
-    datatypes = list(data[0][1].keys())
+    datatypes = data[0].get_datatypes_names()
+
     # If joints_to_append isn't specified, we take all the joints.
     # Just to be sure that the order won't change between 2 motion dicts,
     # we take the keys of one motion and use it as the reference for insertion order
     if not joints_to_append:
-        joints_to_append = list(data[0][1][datatypes[0]].keys())
+        joints_to_append = data[0].get_joint_list()
 
     for motion in data:
         # We keep the name
-        selected_joints_motion = [motion[0], OrderedDict()]
+        selected_joints_motion = [motion.name, OrderedDict()]
 
         # For each datatype
         for datatype in datatypes:
@@ -135,7 +127,7 @@ def joint_selection(data, joints_to_append):
 
             # For each joint to append
             for joint in joints_to_append:
-                joints_selected[joint] = motion[1][datatype][joint]
+                joints_selected[joint] = motion.get_datatype(datatype).get_joint_values(joint)
 
             selected_joints_motion[1][datatype] = joints_selected
 
@@ -330,7 +322,7 @@ def test_full_batch_k_var(path, joint_to_use=None, verbose=False, to_file=False)
 
     # If there's no joint to select, then we take all of them
     if joint_to_use is None:
-        joints_to_append = list(original_data[0][1][data_to_select[0]].keys())
+        joints_to_append = original_data[0].get_joint_list()
     else:
         joints_to_append = joint_to_use
 
@@ -388,9 +380,14 @@ def test_full_batch_k_var(path, joint_to_use=None, verbose=False, to_file=False)
             # Computing the inertia for each cluster
             clusters_inertia = per_cluster_inertia(features, res.cluster_centers_, res.labels_)
 
-            # Computing the f1-score (IF IT'S A 2 CLUSTER PROBLEM)
+            # Computing the f1-score, adjusted mutual information score
+            # and adjusted rand score, if it's a 2 clusters problem. This is
+            # because the ground truth is defined for k = 2 (success or failure)
             if k == 2:
-                f_score_computing(res.labels_, DBRUN_SUCCESS)
+                fs = f_score_computing(res.labels_, DBRUN_SUCCESS)
+                ami = adjusted_mutual_info_score_computing(res.labels_, DBRUN_SUCCESS)
+                ars = adjusted_rand_score_computing(res.labels_, DBRUN_SUCCESS)
+
 
             # Checking the inertia for the sets
             if res.inertia_ < 50:
