@@ -1,4 +1,4 @@
 # Motion classes
-### /!\ UNFINISHED /!\
+### /!\ W.I.P. /!\
 
-This is like a redo of the MLA motion structure. Eventually, a structure transfer function will be implemented so that the C++ structure will be parsed into a Python one. This will allow for a more naturel way to manipulate motion data in the Python code.
+This part of the code is used to store a motion's data, calculated in the C++ code.

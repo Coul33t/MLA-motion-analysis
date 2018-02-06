@@ -1,29 +1,29 @@
-import frame
+from motion_classes.datatype import *
 
 class Motion():
-    def __init__(self, name='NONE', frame_time=0):
+    def __init__(self, name='NONE'):
         self.name = name
-        self.frame_time = frame_time
-        self.frames = []
 
-    def interpolate_joint(self, j1, j2, factor):
-        pass
+        self.pre_processing_info = {}
+        self.post_processing_info = {}
 
-    def interpolate_frames(self, f1, f2, factor):
-        pass
+        # Dic str: Datatype()
+        self.datatypes = {}
 
-    def parse_bvh(path_to_file):
-        is_data = False
+    def add_datatype(self, name, data):
+        datatype = Datatype(name)
+        datatype.joints = data
+        self.datatypes[name] = datatype
 
-        with open(path_to_file, 'r') as data:
-            text = data.read()
+    def get_joint_list(self):
+        if self.datatypes:
+            return self.datatypes[list(self.datatypes.keys())[0]].get_joint_list()
+        else:
+            return None
 
-            for line in enumerate(text.split('\n')):
-                splitted_line = line[1].split()
+    def get_datatypes_names(self):
+        return list(self.datatypes.keys())
 
-                if(splitted_line):
-                    if(splitted_line[0] == 'Frame'):
-                        is_data = True
-
-                    if not is_data:
-                        pass
+    def get_datatype(self, name):
+        if name in self.datatypes.keys():
+            return self.datatypes[name]
