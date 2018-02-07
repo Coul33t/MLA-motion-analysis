@@ -126,7 +126,10 @@ def joint_selection(data, joints_to_append):
             joints_selected = OrderedDict()
 
             # For each joint to append
-            for joint in joints_to_append:
+            if isinstance(joints_to_append, list):
+                for joint in joints_to_append:
+                    joints_selected[joint] = motion.get_datatype(datatype).get_joint_values(joint)
+            else:
                 joints_selected[joint] = motion.get_datatype(datatype).get_joint_values(joint)
 
             selected_joints_motion[1][datatype] = joints_selected
@@ -319,6 +322,7 @@ def test_full_batch_k_var(path, joint_to_use=None, verbose=False, to_file=False)
 
     for motion in original_data:
         motion.validate_motion()
+
     # Wich data to keep
     data_to_select = ['Speed']
 
@@ -350,7 +354,11 @@ def test_full_batch_k_var(path, joint_to_use=None, verbose=False, to_file=False)
 
     # Initialising
     for joint in joints_to_append:
-        res_k[joint] = []
+        # If it's a combination of joints
+        if isinstance(joint, list):
+            res_k[','.join(joint)] = []
+        else:
+            res_k[joint] = []
 
     # For each k value (2 - 10)
     for k in range(2, 11):
@@ -359,13 +367,18 @@ def test_full_batch_k_var(path, joint_to_use=None, verbose=False, to_file=False)
         if to_file:
             output_file.write('\nk = {}\n\n'.format(k))
 
-        # For each joint
+        # For each joint combination
         for joint in joints_to_append:
             if verbose:
                 print('Joint: {}'.format(joint))
 
+            joint_name = joint
+
+            if isinstance(joint, list):
+                joint_name = ','.join(joint)
+
             # We keep the data we're interested in (from the .json file)
-            selected_data = joint_selection(original_data, [joint])
+            selected_data = joint_selection(original_data, joint)
 
             # We put them in the right shape for the algorithm [sample1[f1, f2, ...], sample2[f1, f2, f3...], ...]
             features = data_selection(selected_data, data_to_select)
@@ -393,21 +406,27 @@ def test_full_batch_k_var(path, joint_to_use=None, verbose=False, to_file=False)
 
             # Checking the inertia for the sets
             if res.inertia_ < 50:
-                low_inertia.add(joint)
+                low_inertia.add(joint_name)
             else:
-                high_inertia.add(joint)
+                high_inertia.add(joint_name)
 
             if verbose:
                 print("Inertia: {}".format(res.inertia_))
                 clusters_composition(res.labels_, verbose=True)
 
             if to_file:
-                output_file.write('Joint: {} '.format(joint))
-                output_file.write("Inertia: {}\n".format(res.inertia_))
+                output_file.write('Joint: {} '.format(joint_name))
+                output_file.write("Inertia: {}".format(res.inertia_))
+
+                if k == 2:
+                    output_file.write(" / F1-score: {}".format(fs))
+                    output_file.write(" / AMI: {}".format(ami))
+                    output_file.write(" / ARS: {}\n".format(ars))
+
                 clusters_composition(res.labels_, verbose=False, output_file=output_file)
 
             # Appending the value for the current k to the results OrderedDict
-            res_k[joint].append([k, res.inertia_])
+            res_k[joint_name].append([k, res.inertia_])
 
 
     print("Low inertia joints (< 50):{}\n".format(low_inertia))
@@ -508,8 +527,9 @@ def main():
 def main_all_joints():
     # Extracted from test_full_batch_k_var (inertia < 50 at one point)
     # low_inertia_joints = ['EndLeftFoot', 'LeftHandRing2', 'LeftForeArm', 'LeftHandPinky2', 'LeftHandMiddle2', 'EndHead', 'LeftHandIndex1', 'Spine3', 'LeftHandThumb3', 'LeftHandMiddle1', 'EndLeftHandRing3', 'LeftHandRing3', 'LeftHandMiddle3', 'RightShoulder', 'RightArm', 'LeftInHandRing', 'EndLeftHandThumb3', 'Spine', 'LeftInHandPinky', 'LeftHandPinky3', 'EndLeftHandMiddle3', 'LeftHandIndex2', 'LeftHandRing1', 'LeftHandThumb2', 'LeftShoulder', 'Hips', 'LeftHandIndex3', 'Spine2', 'EndLeftHandPinky3', 'EndLeftHandIndex3', 'LeftInHandIndex', 'RightForeArm', 'RightUpLeg', 'RightFoot', 'LeftArm', 'LeftUpLeg', 'RightLeg', 'LeftHandPinky1', 'Neck', 'LeftFoot', 'LeftInHandMiddle', 'LeftHandThumb1', 'LeftHand', 'LeftLeg', 'Spine1', 'Head', 'EndRightFoot']
-    low_inertia_joints = None
-    test_full_batch_k_var(r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Speed\\', joint_to_use=low_inertia_joints, verbose=False, to_file=True)
+    right_joints_list = ['RightHand', 'RightForeArm', 'RightArm', 'RightShoulder', 'Neck', 'Hips']
+    left_joints_list = [['LeftHand', 'LeftForeArm', 'LeftArm', 'LeftShoulder', 'Neck', 'Hips'], ['RightHand']]
+    test_full_batch_k_var(r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Speed\\', joint_to_use=left_joints_list, verbose=False, to_file=True)
     # test_full_batch_every_joint(r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Speed\\')
 
 if __name__ == '__main__':
