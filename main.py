@@ -317,6 +317,8 @@ def test_full_batch_k_var(path, joint_to_use=None, verbose=False, to_file=False)
     # Gathering the data
     original_data = json_import(path, ['JSON_BATCH_TEST', 'Damien'])
 
+    for motion in original_data:
+        motion.validate_motion()
     # Wich data to keep
     data_to_select = ['Speed']
 
