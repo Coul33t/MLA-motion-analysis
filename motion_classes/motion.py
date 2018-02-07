@@ -1,5 +1,5 @@
 from motion_classes.datatype import *
-
+import pdb
 #TODO: add joints name to the json file (C++)
 class Motion():
     def __init__(self, name='NONE'):
@@ -11,16 +11,10 @@ class Motion():
         # Dic str: Datatype()
         self.datatypes = {}
 
-        # List[str]
-        self.joints_list = []
-
     def add_datatype(self, name, data):
         datatype = Datatype(name)
         datatype.joints = data
         self.datatypes[name] = datatype
-
-        if not self.joints_list:
-            self.joints_list = datatype.get_joint_list()
 
     def get_joint_list(self):
         if self.datatypes:
@@ -51,8 +45,7 @@ class Motion():
             print('Post-processing information is empty.')
             passed = False
 
-        
-        sorted_joint_list = sorted(self.joints_list)
+        sorted_joint_list = sorted(self.pre_processing_info['joints names'])
 
         # For very joints there should be
         for joint in sorted_joint_list:
