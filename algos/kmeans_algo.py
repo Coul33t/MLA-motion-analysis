@@ -22,19 +22,16 @@ def kmeans_algo(data, algo='k-means++', k=2, verbose=False, extrem_verbose=False
 
 def per_cluster_inertia(data, centers, labels):
     """
-        This function returns a list with its length = k (cluster number),
+        This function returns a dictionnary with its length = k (cluster number),
         containing all the cluster's inertia (opposed to sklearn's k-means,
-        where it's the global inertia). Of course, the data must be sorted 
-        in the same order as the labels' list, i.e.
-        data[0] -> labels[0], data[1] -> labels[1], etc.
+        where it's the global inertia).
     """
 
-    clusters_inertia = np.zeros( (len(centers) ))
+    clusters_inertia = {}
 
     for i,center in enumerate(centers):
         cluster_data = [x for j,x in enumerate(data) if labels[j] == i]
-        clusters_inertia[i] += sum(sum(distance.cdist([center], cluster_data, 'sqeuclidean')))
-
+        clusters_inertia['c' + str(i)] = sum(sum(distance.cdist([center], cluster_data, 'sqeuclidean')))
 
     return clusters_inertia
 
