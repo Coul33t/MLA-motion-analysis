@@ -1,6 +1,6 @@
 from motion_classes.datatype import *
 import pdb
-#TODO: add joints name to the json file (C++)
+
 class Motion():
     def __init__(self, name='NONE'):
         self.name = name
@@ -59,7 +59,7 @@ class Motion():
                     datatype_joint_list.append(joint_datatype)
 
                     if None in self.datatypes[datatype].get_joint_values(joint_datatype):
-                        print('Joint {} from datatype {} has None value.'.formtat(joint_datatype, datatype))
+                        print('Joint {} from datatype {} has None value.'.format(joint_datatype, datatype))
                         passed = False
 
                 if sorted_joint_list != sorted(datatype_joint_list):
