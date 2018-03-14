@@ -113,9 +113,15 @@ def return_files(f, str_to_check=[''], present=True):
         (default: all files)
     """
     if present:
-        return sorted([x for x in os.listdir(f) if all(sub_str in x for sub_str in str_to_check)], key=natural_keys)
+        if isinstance(str_to_check, list):
+            return sorted([x for x in os.listdir(f) if all(sub_str in x for sub_str in str_to_check)], key=natural_keys)
+        elif isinstance(str_to_check, str):
+            return sorted([x for x in os.listdir(f) if str_to_check in x], key=natural_keys)
     else:
-        return sorted([x for x in os.listdir(f) if all(sub_str not in x for sub_str in str_to_check)], key=natural_keys)
+        if isinstance(str_to_check, list):
+            return sorted([x for x in os.listdir(f) if all(sub_str not in x for sub_str in str_to_check)], key=natural_keys)
+        elif isinstance(str_to_check, str):
+            return sorted([x for x in os.listdir(f) if str_to_check not in x], key=natural_keys)
 
 
 def return_data(f, joints_to_append=None):
@@ -180,10 +186,7 @@ def return_data_with_names(f, joints_to_append=None):
 
 def json_import(folder_path, folder_name=None):
     """
-        Import the data from json files
-        For each motion: [name, data]
-                                -> dict (k: Datatype, v: dict)
-                                                         -> dict (k: joint, v: values)
+        Import the data from json files. Each motion is put into a Motion class
     """
     if not folder_name:
         folder_name = ['JSON_BATCH_TEST']
