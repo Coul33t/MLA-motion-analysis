@@ -162,11 +162,9 @@ def plot_2d_dual(data, true_class, clu_class, label1='NONE_1', label2='NONE_2'):
    
     plt.show()
 
-def plot_data_k_means(data):
+def plot_data_k_means(data, save=False, name='foo'):
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    
-    
 
     color=iter(cm.rainbow(np.linspace(0,1,len(data))))
 
@@ -179,6 +177,43 @@ def plot_data_k_means(data):
         ax.plot(x, y, '-', color=c, label=joint)
 
     plt.legend()
+
+    if save:
+        plt.savefig(name + '.png')
+    else:
+        plt.show()
+
+def simple_plot_2d(data):
+    data = np.asarray(data)
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    x = np.linspace(0, data.shape[0]-1, data.shape[0])
+    
+    ax.set_xlabel('Frame')
+    ax.set_ylabel('Linear speed (m/s)')
+
+
+    ax.plot(x, data.reshape(data.shape[0]), color='blue')
+
+    plt.show()
+
+def simple_plot_2d_2_curves(data1, data2):
+    data1 = np.asarray(data1)
+    data2 = np.asarray(data2)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    x = np.linspace(0, data1.shape[0]-1, data1.shape[0])
+    
+    ax.set_xlabel('Frame')
+    ax.set_ylabel('Linear speed (m/s)')
+
+    ax.plot(x, data1.reshape(data1.shape[0]), color='blue')
+    ax.plot(x, data2.reshape(data2.shape[0]), color='red')
+
     plt.show()
 
 def test():
