@@ -16,22 +16,26 @@ class Results:
         """
         res_dict = {}
 
-        for item, value in kwargs.items():
+        for key, value in kwargs.items():
             # If it's a list of nouns, we merge it
             # e.g. ['Hand', 'Arm', 'Head']
             # ->    'Hand, Arm, Head'
             if isinstance(value, list) and isinstance(value[0], str):
                 if len(value) == 1:
-                    res_dict[item] = value[0]
+                    res_dict[key] = value[0]
                 else:
-                    res_dict[item] = ', '.join(value)
+                    res_dict[key] = ', '.join(value)
 
 
             # Else, it's nothing special (either a list or a dict or a value)
             else:
-                res_dict[item] = value
+                res_dict[key] = value
 
-            self.list_of_properties.add(item)
+            self.list_of_properties.add(key)
+
+            if isinstance(value, dict):
+                for key2 in value.keys():
+                    self.list_of_properties.add(key2)
 
         self.result_list.append(res_dict)
 
@@ -42,9 +46,10 @@ class Results:
         # ((intersection of the sets == initial set) means that all the keys
         # of kwargs are present in the keys of the results)
         if not (kwargs.keys() & self.list_of_properties == kwargs.keys()):
-            print('ERROR: {} not in results properties'.format(name))
+            print('ERROR: {} not in results properties'.format(
+                  kwargs.keys() - kwargs.keys() & self.list_of_properties))
             print('Available properties are:')
-            for key in self.result_list[0].keys():
+            for key, val in self.result_list[0].items():
                 print('- {}'.format(key))
             return False
 
@@ -63,6 +68,22 @@ class Results:
             valid = True
 
             for key, val in kwargs.items():
+
+                # It means that the key is in a dictionnary
+                if key not in res.keys():
+                    key_found_in_subdict = False
+                    # We iterate over the key/values
+                    for key_inner_dict, val_inner_dict in res.items():
+                        # If the value is a dict, we try to find the original key inside it
+                        if isinstance(val_inner_dict, dict):
+                            if key in val_inner_dict.keys():                        
+                                res = val_inner_dict
+                                key_found_in_subdict = True
+
+                    if not key_found_in_subdict:
+                        valid = False
+                        break
+
                 if val[1] == 'eq':
                     if res[key] != val[0]:
                         valid = False
@@ -176,7 +197,11 @@ class Results:
                     for i, c in enumerate(res['motion_repartition']):
                         if i != 0:
                             f_txt.write('\n')
-                        f_txt.write('\nMotions in ' + c + ': ' + ', '.join(res['motion_repartition'][c]))
+                        try:
+                            f_txt.write('\nMotions in ' + c + ': ' + ', '.join(res['motion_repartition'][c]))
+                        # Ok that's ugly (and because of cluster_composition)
+                        except TypeError:
+                            f_txt.write('\n{}: {}'.format(c, res['motion_repartition'][c]))
 
                     f_txt.write('\n-------------------------------------')
 
