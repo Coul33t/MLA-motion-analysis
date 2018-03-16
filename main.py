@@ -326,6 +326,9 @@ def test_full_batch_k_var(path, import_find, joint_to_use=None,
     # Gathering the data
     original_data = json_import(path, import_find)
 
+    if not original_data:
+        print('ERROR: no data found (check your names).')
+        return
     # for motion in original_data:
     #     motion.validate_motion()
 
@@ -467,7 +470,7 @@ def test_full_batch_k_var(path, import_find, joint_to_use=None,
     data_to_export = results.get_res(k=[3, 'eq'], ars=[0.1, 'supeq'])
 
     results.export_data(r'C:\Users\quentin\Documents\Programmation\Python\ml_mla\test_export_class',
-                        data_to_export=data_to_export, text_export=to_file, 
+                        text_export=to_file, 
                         json_export=to_json)
     
 
@@ -496,7 +499,7 @@ def clusters_composition(labels, true_labels, sample_nb, verbose=False):
     # Get a list of clusters number
     cluster_nb = set(labels)
 
-    success = np.asarray(DBRUN_SUCCESS)
+    success = np.asarray(dl.GLOUP_SUCCESS)
     # Switching from natural idx to array idx
     success = success - 1
 
@@ -597,8 +600,17 @@ def main():
 def main_all_joints():
     # Extracted from test_full_batch_k_var (inertia < 50 at one point)
     # low_inertia_joints = ['EndLeftFoot', 'LeftHandRing2', 'LeftForeArm', 'LeftHandPinky2', 'LeftHandMiddle2', 'EndHead', 'LeftHandIndex1', 'Spine3', 'LeftHandThumb3', 'LeftHandMiddle1', 'EndLeftHandRing3', 'LeftHandRing3', 'LeftHandMiddle3', 'RightShoulder', 'RightArm', 'LeftInHandRing', 'EndLeftHandThumb3', 'Spine', 'LeftInHandPinky', 'LeftHandPinky3', 'EndLeftHandMiddle3', 'LeftHandIndex2', 'LeftHandRing1', 'LeftHandThumb2', 'LeftShoulder', 'Hips', 'LeftHandIndex3', 'Spine2', 'EndLeftHandPinky3', 'EndLeftHandIndex3', 'LeftInHandIndex', 'RightForeArm', 'RightUpLeg', 'RightFoot', 'LeftArm', 'LeftUpLeg', 'RightLeg', 'LeftHandPinky1', 'Neck', 'LeftFoot', 'LeftInHandMiddle', 'LeftHandThumb1', 'LeftHand', 'LeftLeg', 'Spine1', 'Head', 'EndRightFoot']
-    # right_joints_list = ['RightHand', 'RightForeArm', 'RightArm', 'RightShoulder', 'Neck', 'Hips']
-    left_joints_list = [['LeftHand', 'LeftForeArm', 'LeftArm', 'LeftShoulder', 'Neck', 'Hips'], ['LeftHand'], ['LeftHand', 'LeftForeArm'], ['LeftHand', 'LeftForeArm', 'LeftArm'], ['LeftHand', 'LeftForeArm', 'LeftArm', 'LeftShoulder']]
+    right_joints_list = [['RightHand'], 
+                         ['RightHand', 'RightForeArm'],
+                         ['RightHand', 'RightForeArm', 'RightArm'],
+                         ['RightHand', 'RightForeArm', 'RightArm', 'RightShoulder'],
+                         ['RightHand', 'RightForeArm', 'RightArm', 'RightShoulder', 'Neck', 'Hips']]
+
+    left_joints_list = [['LeftHand'], 
+                        ['LeftHand', 'LeftForeArm'],
+                        ['LeftHand', 'LeftForeArm', 'LeftArm'],
+                        ['LeftHand', 'LeftForeArm', 'LeftArm', 'LeftShoulder'],
+                        ['LeftHand', 'LeftForeArm', 'LeftArm', 'LeftShoulder', 'Neck', 'Hips']]
 
     data_types_combination = [['BegMaxEndSpeedNorm'],
                               ['BegMaxEndSpeedx', 'BegMaxEndSpeedy', 'BegMaxEndSpeedz'],
@@ -611,15 +623,14 @@ def main_all_joints():
                               ['AccelerationNorm', 'Accelerationx', 'Accelerationy', 'Accelerationz'],
                               ['AccelerationNorm', 'SpeedNorm'], 
                               ['Accelerationx', 'Accelerationy', 'Accelerationz', 'Speedx', 'Speedy', 'Speedz'],
-                              ['AccelerationNorm', 'Accelerationx', 'Accelerationy', 'Accelerationz', 'SpeedNorm', 'Speedx', 'Speedy', 'Speedz']
-                             ]
+                              ['AccelerationNorm', 'Accelerationx', 'Accelerationy', 'Accelerationz', 'SpeedNorm', 'Speedx', 'Speedy', 'Speedz']]
 
     for data_to_select in data_types_combination:
         test_full_batch_k_var(r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Speed\\',
-                              ['Damien'],
-                              joint_to_use=left_joints_list,
+                              ['Guillaume'],
+                              joint_to_use=right_joints_list,
                               data_to_select=data_to_select,
-                              true_labels=dl.DRUN_LABELS_3,
+                              true_labels=dl.GLOUP_LABELS_2,
                               verbose=False,
                               to_file=True,
                               to_json=True,
