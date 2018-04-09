@@ -1,7 +1,7 @@
 # Native packages
 import os
-# Regex
 import re
+#TODO: remove when Python 3.7 is out (dict will keep the insertion value)
 from collections import OrderedDict
 import pdb
 
@@ -9,91 +9,34 @@ import pdb
 import numpy as np
 
 # Personnal packages
-from tools import flatten_list, motion_dict_to_list, natural_keys
-from data_import import data_gathering_dict, json_import
-from algos.kmeans_algo import kmeans_algo, per_cluster_inertia, f_score_computing, adjusted_mutual_info_score_computing, adjusted_rand_score_computing
-from data_visualization import plot_data_k_means, simple_plot_2d
+from tools import (flatten_list,
+                   motion_dict_to_list,
+                   natural_keys)
 
+# Data import functions
+from data_import import (data_gathering_dict,
+                         json_import)
+
+# Clustering algorithms and metrics computing
+from algos.kmeans_algo import (kmeans_algo, 
+                               per_cluster_inertia, 
+                               f_score_computing, 
+                               adjusted_mutual_info_score_computing, 
+                               adjusted_rand_score_computing, 
+                               silhouette_score_computing,
+                               calinski_harabaz_score_computing)
+
+# Data visualization functions
+from data_visualization import (plot_data_k_means,
+                                simple_plot_2d)
+
+# Results class
 from results_analysing import Results
 
+# Ground truth for data
 import data_labels as dl
-
-# OLD AND UNUSED (TODO:delete)
-def test_mean_speed_intervals(motion_type="gimbal", joints_to_append=None):
-    """
-        This function applies k-means (k=2) on motion data.
-    """
-    folder = r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Speed'
-
-    data = []
-
-    subdirectories = os.listdir(folder)
-    subdirectories.sort(key=natural_keys)
-
-    for name in subdirectories:
-        if motion_type in name:
-            print("Appending {}".format(name))
-            data.append(flatten_list(motion_dict_to_list(data_gathering_dict(folder+'\\'+name+'\\lin_mean_10_cut', joints_to_append))))
-
-    pdb.set_trace()
-
-    return kmeans_algo(data)
-
-
-
-
-# OLD AND UNUSED (TODO:delete)
-def test_mean_speed_intervals_batch(size, motion_type='gimbal', joints_to_append=None):
-    """
-        This function applies k-means (k=2) on motion data.
-    """
-    folder = r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Speed'
-
-    subdirectories = os.listdir(folder)
-    subdirectories.sort(key=natural_keys)
-
-    data_lin = [[] for x in range(size)]
-    names = []
-
-    # For each folder
-    for name in subdirectories:
-
-        # If the folder's name contain the name of the motion
-        if motion_type in name:
-
-            print(name)
-            subsubdirectories = os.listdir(folder+'\\'+name)
-            subsubdirectories.sort(key=natural_keys)
-
-            i = 0
-            # For each file in the folder
-            for subname in subsubdirectories:
-                if 'lin_mean' in subname:
-
-                    if subname not in names:
-                        names.append(subname)
-
-                    print(subname)
-
-                    # Append data
-                    data_lin[i].append(flatten_list(motion_dict_to_list(data_gathering_dict(folder+'\\'+name+'\\' + subname, joints_to_append))))
-                    i += 1
-
-    res = []
-
-    # Actual ML
-
-    for i, different_cut in enumerate(data_lin):
-        print('Batch : {}'.format(i))
-        res.append(kmeans_algo(different_cut))
-        # res.append(affinity_propagation_algo(different_cut))
-        # res.append(mean_shift_algo(different_cut))
-
-    return res
-
-
-
-
+# Constants (well more like " huge lists " but whatever)
+import constants as cst
 
 def joint_selection(data, joints_to_append):
     """
@@ -126,10 +69,7 @@ def joint_selection(data, joints_to_append):
             # For each joint to append
             if isinstance(joints_to_append, list):
                 for joint in joints_to_append:
-                    try:
-                        joints_selected[joint] = motion.get_datatype(datatype).get_joint_values(joint)
-                    except AttributeError:
-                        pdb.set_trace()
+                    joints_selected[joint] = motion.get_datatype(datatype).get_joint_values(joint)
 
             else:
                 joints_selected[joints_to_append] = motion.get_datatype(datatype).get_joint_values(joints_to_append)
@@ -139,10 +79,6 @@ def joint_selection(data, joints_to_append):
         selected_data.append(selected_joints_motion)
 
     return selected_data
-
-
-
-
 
 def data_selection(data, data_to_keep):
     """
@@ -168,6 +104,7 @@ def data_selection(data, data_to_keep):
                 for joint in motion[1][datatype]:
                     # If it doesn't exists, create an empty list then append
                     # Else, append
+
                     motion_feat.setdefault(joint, []).append(motion[1][datatype][joint][i])
 
         features.append(flatten_list(list(motion_feat.values())))
@@ -175,10 +112,6 @@ def data_selection(data, data_to_keep):
     # We return the list as a numpy array, as it is more
     # convenient to use
     return np.asarray(features)
-
-
-
-
 
 def distance_matrix_computing(data):
     """
@@ -192,9 +125,6 @@ def distance_matrix_computing(data):
             distance_matrix[i][j] = abs(sum(data[i] - data[j]))
 
     return distance_matrix
-
-
-
 
 def compute_mean_std(d_m, success_indexes, natural_indexes=False):
     """
@@ -240,79 +170,12 @@ def compute_mean_std(d_m, success_indexes, natural_indexes=False):
             np.mean(cutted_failure_distance_matrix),
             np.std(cutted_failure_distance_matrix)]
 
-
-
-
-def test_full_batch(path, joints_to_append=None):
-    original_data = json_import(path)
-
-    selected_data = joint_selection(original_data, joints_to_append)
-
-    data_to_select = ['Speed']
-    features = data_selection(selected_data, data_to_select)
-
-    res = kmeans_algo(features)
-    print('Good classification rate : {}\nInertia: {}'.format(loup_rate(res.labels_), res.inertia_))
-
-
-
-
-
-def test_full_batch_every_joint(path):
-    """
-        This function runs a k-means algorithm (k=2), on each joint.
-    """
-    original_data = json_import(path)
-
-    joints_to_append = list(original_data[0][1]['Speed'].keys())
-
-    data_to_select = ['DiffSpeed']
-
-    print('Data used: {}'.format(data_to_select))
-    str1 = 'Joint name'
-    str2 = 'Rate'
-    str3 = 'Inertia'
-    print(str1.ljust(30) + str2.ljust(15) + str3)
-    str1 = '(success mean)'
-    str2 = '(success std)'
-    str3 = '(failure mean)'
-    str4 = '(failure std)'
-    print(str1.ljust(15) + str2.ljust(15) + str3.ljust(15) + str4)
-    print('----------------------------------------------------------------')
-    print('----------------------------------------------------------------')
-
-    for joint in joints_to_append:
-        selected_data = joint_selection(original_data, [joint])
-
-        features = data_selection(selected_data, data_to_select)
-
-        pdb.set_trace()
-
-        d_m = distance_matrix_computing(features)
-
-        c_res = compute_mean_std(d_m, GLOUP_SUCCESS, natural_indexes=True)
-
-        res = kmeans_algo(features)
-
-        if res.inertia_ < 50 and loup_rate(res.labels_) > 0.7:
-            str1 = '{}'.format(joint)
-            str2 = '{}'.format(loup_rate(res.labels_))
-            str3 = '{}'.format(res.inertia_)
-            print(str1.ljust(30) + str2.ljust(15) + str3)
-            str1 = 's_mean: {}'.format(np.around(c_res[0], decimals=4))
-            str2 = 's_std: {}'.format(np.around(c_res[1], decimals=4))
-            str3 = 'f_mean: {}'.format(np.around(c_res[2], decimals=4))
-            str4 = 'f_std: {}'.format(np.around(c_res[3], decimals=4))
-            str5 = 'g_mean: {}'.format(np.around(np.mean(d_m), decimals=4))
-            str6 = 'g_std: {}'.format(np.around(np.std(d_m), decimals=4))
-            print(str1.ljust(18) + str2.ljust(18) + str3.ljust(18) + str4.ljust(18) + str5.ljust(18) + str6)
-            print('----------------------------------------------------------------')
-
-
-def test_full_batch_k_var(path, import_find, joint_to_use=None, 
-                          data_to_select=None, true_labels=None, 
-                          verbose=False, to_file=True, to_json=True,
-                          save_graph=False, only_success=False):
+def test_full_batch_k_var(path, import_find, validate_data = False,
+                          joint_to_use=None, data_to_select=None, 
+                          true_labels=None, verbose=False, to_file=True, 
+                          to_json=True, display_graph=False,
+                          save_graph=False, data_to_graph=None,
+                          only_success=False):
     """
         This function run a k-means algorithm with varying k values, on each joint.
     """
@@ -322,27 +185,41 @@ def test_full_batch_k_var(path, import_find, joint_to_use=None,
         print('ERROR: must have true labels with c=2 to extract the succesful motions only.')
         return
 
+    if (display_graph or save_graph) and not data_to_graph:
+        print('ERROR: no data specified for graph output.')
+        return
+
+    original_data = []
 
     # Gathering the data
-    original_data = json_import(path, import_find)
+    # If it's a list, then we have to import multiple people's data
+    if isinstance(import_find[0], list):
+        for to_import in import_find[0]:
+            original_data.extend(json_import(path, to_import))
+    # Else, it's just a name, so we import their data
+    else:
+        original_data = json_import(path, import_find)
+
 
     if not original_data:
         print('ERROR: no data found (check your names).')
         return
-    # for motion in original_data:
-    #     motion.validate_motion()
+
+    if validate_data:
+        for motion in original_data:
+            motion.validate_motion()
 
     # If there's no specific datatype defined, we take all the data available
     if not data_to_select:
         data_to_select = set([name for motion in original_data for name in motion.datatypes])
 
-    print('Data used: {}'.format(data_to_select))
+    print('\nData used: {}'.format(data_to_select))
 
     # If there's no joint to select, then we take all of them
     if joint_to_use is None:
         joint_to_use = original_data[0].get_joint_list()
 
-    print('Joints used: {}\n\n\n'.format(joint_to_use))
+    print('Joints used: {}\n'.format(joint_to_use))
 
     # This OrderedDict will contain each joint as a key, and for each
     # joint, a list of list, [nb_cluster, inertia]
@@ -372,7 +249,7 @@ def test_full_batch_k_var(path, import_find, joint_to_use=None,
 
     # For each k value (2 - 10)
     for k in range(2, 11):
-        print('k = {}'.format(k))
+        print('Running for k = {}'.format(k))
 
         # For each joint combination
         for joint in joint_to_use:
@@ -419,6 +296,10 @@ def test_full_batch_k_var(path, import_find, joint_to_use=None,
                 metrics['ami'] = adjusted_mutual_info_score_computing(res.labels_, true_labels)
                 metrics['ars'] = adjusted_rand_score_computing(res.labels_, true_labels)
 
+            if only_success or (not only_success and not true_labels):
+                metrics['ss'] = silhouette_score_computing(features, res.labels_)
+                metrics['ch'] = calinski_harabaz_score_computing(features, res.labels_)
+
 
             # Checking the inertia for the sets
             if res.inertia_ < 50:
@@ -444,52 +325,71 @@ def test_full_batch_k_var(path, import_find, joint_to_use=None,
                                                    verbose=False)
 
             # Appending the value for the current k to the results OrderedDict
-            res_k[joint_name].append([k, res.inertia_])
+            # (used for graph)
+            if data_to_graph and data_to_graph in metrics.keys():
+                res_k[joint_name].append([k, metrics[data_to_graph]])
 
-            results.add_values(k=k, data_used=data_to_select, joints_used=joint, 
-                               global_inertia=res.inertia_, per_cluster_inertia=clusters_inertia, 
-                               metrics=metrics, motion_repartition=c_comp)
+            # Compute the distance between each centroids for each dimension
+            centroids = np.asarray(res.cluster_centers_)
+            centroids_diff = {}
+            for i in range(len(centroids) - 1):
+                for j in range(i+1, len(centroids)):
+                    centroids_diff[f'c{i}_c{j}'] = abs(centroids[i] - centroids[j]).tolist()
 
+            # Add the current algorithm output to the results
+            results.add_values(k=k, data_used=data_to_select, joints_used=joint, centroids=res.cluster_centers_,
+                               centroids_diff=centroids_diff, global_inertia=res.inertia_, 
+                               per_cluster_inertia=clusters_inertia, metrics=metrics, motion_repartition=c_comp)
 
+    # for key, val in res_k.items():
+    #     max_val = -9999
+    #     k = 0
+
+    #     for elem in val:
+    #         if elem[1] > max_val:
+    #             max_val = elem[1]
+    #             k = elem[0]
+
+    #     print(f"{key}: {max_val}({k})") 
 
     if verbose:
         print("Low inertia joints (< 50):{}\n".format(low_inertia))
         print("High inertia joints (>= 50):{}\n".format(high_inertia))
         print("Intersection:{}\n".format(low_inertia & high_inertia))
 
-    # Plotting or saving the inertia values
-    plot_save_name = 'test_export_class/' + "_".join(data_to_select)
+    path_to_export = ''
 
-    if only_success:
-        plot_save_name += '_only_success'
-    if true_labels:
-        plot_save_name += '_c' + str(len(set(true_labels)))
+    if isinstance(import_find[0], list):
+        path_to_export = r'C:/Users/quentin/Documents/Programmation/Python/ml_mla/test_export_class/' + '_'.join(import_find[0]) +'/'
+    else:
+        path_to_export = r'C:/Users/quentin/Documents/Programmation/Python/ml_mla/test_export_class/' + import_find[0] +'/'
 
-    plot_data_k_means(res_k, save=save_graph, name=plot_save_name)
+    data_to_export = 'all'
+    # data_to_export = results.get_res(ss=[0.5, 'supeq'])
 
-    data_to_export = results.get_res(k=[3, 'eq'], ars=[0.1, 'supeq'])
-
-    results.export_data(r'C:\Users\quentin\Documents\Programmation\Python\ml_mla\test_export_class',
+    # Exporting the data
+    results.export_data(path=path_to_export,
+                        data_to_export=data_to_export,
                         text_export=to_file, 
                         json_export=to_json)
+
+    # Plotting or saving the desired values
+    if display_graph or save_graph:
+        plot_save_name = ''
+
+        if save_graph:
+            plot_save_name = "_".join(data_to_select)
+
+            if only_success:
+                plot_save_name += '_only_success'
+            if true_labels:
+                plot_save_name += '_c' + str(len(set(true_labels)))
     
-
-
-def loup_rate(labels):
-    """
-        This ad-hoc function is used to compute the good clsutering rate with GLOUP's data.
-    """
-
-    # Don't forget to -1 values to have array indexes
-    true_labels = [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1]
-
-    diff = []
-    for j, _ in enumerate(true_labels):
-        diff.append(abs(true_labels[j]-labels[j]))
-
-    return max(diff.count(0)/len(diff), diff.count(1)/len(diff))
-
-
+        plot_data_k_means(res_k, display=display_graph, save=save_graph, 
+                          name=plot_save_name, path=path_to_export, 
+                          graph_title=plot_save_name.replace('_', ' '),
+                          x_label='k value', y_label=data_to_graph)
+    
 def clusters_composition(labels, true_labels, sample_nb, verbose=False):
     """
         For each k in labels, this function returns the clusters' composition.
@@ -499,7 +399,7 @@ def clusters_composition(labels, true_labels, sample_nb, verbose=False):
     # Get a list of clusters number
     cluster_nb = set(labels)
 
-    success = np.asarray(dl.GLOUP_SUCCESS)
+    success = np.asarray(dl.DBRUN_SUCCESS)
     # Switching from natural idx to array idx
     success = success - 1
 
@@ -519,7 +419,6 @@ def clusters_composition(labels, true_labels, sample_nb, verbose=False):
         if verbose:
             print("Success in c{}: {} / Failure in c{}: {}".format(k, len(set(success) & set(sample_idx)), 
                                                                    k, len(set(failure) & set(sample_idx))))
-
     return c_composition
 
 def clusters_composition_name(labels, sample_nb, original_names, verbose=False):
@@ -545,12 +444,6 @@ def clusters_composition_name(labels, sample_nb, original_names, verbose=False):
             print("\nMotions in c{}: {}".format(c, stripped_names[np.where(labels == c)]))
 
     return c_composition
-
-
-def display_res(result_list):
-    for result in result_list:
-        print('{} : [min: {}] [max: {}] [mean: {}]'.format(result[0], min(result[1]), max(result[1]), sum(result[1])/len(result[1])))
-
 
 def plot_speed(path, file, joint_to_use):
     original_data = json_import(path, file)
@@ -598,55 +491,34 @@ def main():
         print('')
 
 def main_all_joints():
-    # Extracted from test_full_batch_k_var (inertia < 50 at one point)
-    # low_inertia_joints = ['EndLeftFoot', 'LeftHandRing2', 'LeftForeArm', 'LeftHandPinky2', 'LeftHandMiddle2', 'EndHead', 'LeftHandIndex1', 'Spine3', 'LeftHandThumb3', 'LeftHandMiddle1', 'EndLeftHandRing3', 'LeftHandRing3', 'LeftHandMiddle3', 'RightShoulder', 'RightArm', 'LeftInHandRing', 'EndLeftHandThumb3', 'Spine', 'LeftInHandPinky', 'LeftHandPinky3', 'EndLeftHandMiddle3', 'LeftHandIndex2', 'LeftHandRing1', 'LeftHandThumb2', 'LeftShoulder', 'Hips', 'LeftHandIndex3', 'Spine2', 'EndLeftHandPinky3', 'EndLeftHandIndex3', 'LeftInHandIndex', 'RightForeArm', 'RightUpLeg', 'RightFoot', 'LeftArm', 'LeftUpLeg', 'RightLeg', 'LeftHandPinky1', 'Neck', 'LeftFoot', 'LeftInHandMiddle', 'LeftHandThumb1', 'LeftHand', 'LeftLeg', 'Spine1', 'Head', 'EndRightFoot']
-    right_joints_list = [['RightHand'], 
-                         ['RightHand', 'RightForeArm'],
-                         ['RightHand', 'RightForeArm', 'RightArm'],
-                         ['RightHand', 'RightForeArm', 'RightArm', 'RightShoulder'],
-                         ['RightHand', 'RightForeArm', 'RightArm', 'RightShoulder', 'Neck', 'Hips']]
 
-    left_joints_list = [['LeftHand'], 
-                        ['LeftHand', 'LeftForeArm'],
-                        ['LeftHand', 'LeftForeArm', 'LeftArm'],
-                        ['LeftHand', 'LeftForeArm', 'LeftArm', 'LeftShoulder'],
-                        ['LeftHand', 'LeftForeArm', 'LeftArm', 'LeftShoulder', 'Neck', 'Hips']]
+    people_names = cst.people_names
+    data_types_combination = cst.data_types_combination
+    right_joints_list = cst.right_joints_list
+    left_joints_list = cst.left_joints_list
 
-    data_types_combination = [['BegMaxEndSpeedNorm'],
-                              ['BegMaxEndSpeedx', 'BegMaxEndSpeedy', 'BegMaxEndSpeedz'],
-                              ['BegMaxEndSpeedNorm', 'BegMaxEndSpeedx', 'BegMaxEndSpeedy', 'BegMaxEndSpeedz'],
-                              ['SpeedNorm'],
-                              ['Speedx', 'Speedy', 'Speedz'],
-                              ['SpeedNorm', 'Speedx', 'Speedy', 'Speedz'], 
-                              ['AccelerationNorm'], 
-                              ['Accelerationx', 'Accelerationy', 'Accelerationz'],
-                              ['AccelerationNorm', 'Accelerationx', 'Accelerationy', 'Accelerationz'],
-                              ['AccelerationNorm', 'SpeedNorm'], 
-                              ['Accelerationx', 'Accelerationy', 'Accelerationz', 'Speedx', 'Speedy', 'Speedz'],
-                              ['AccelerationNorm', 'Accelerationx', 'Accelerationy', 'Accelerationz', 'SpeedNorm', 'Speedx', 'Speedy', 'Speedz']]
+    for people in people_names:
+        for data_to_select in data_types_combination:
+            name = people[0]
+            joint_list = right_joints_list
+            if people[1] == 'left':
+                joint_list = left_joints_list
 
-    for data_to_select in data_types_combination:
-        test_full_batch_k_var(r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Speed\\',
-                              ['Guillaume'],
-                              joint_to_use=right_joints_list,
-                              data_to_select=data_to_select,
-                              true_labels=dl.GLOUP_LABELS_2,
-                              verbose=False,
-                              to_file=True,
-                              to_json=True,
-                              save_graph=True,
-                              only_success=False)
-    # test_full_batch_every_joint(r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Speed\\')
+            print(f'\n\n\nProcessing {name}...')
+            test_full_batch_k_var(r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Speed\old_directions_begmaxend\\',
+                                  [name],
+                                  validate_data=False,
+                                  joint_to_use=joint_list,
+                                  data_to_select=data_to_select,
+                                  true_labels=None,
+                                  verbose=False,
+                                  to_file=True,
+                                  to_json=True,
+                                  display_graph=False,
+                                  save_graph=True,
+                                  data_to_graph='ss',
+                                  only_success=False)
 
 if __name__ == '__main__':
     main_all_joints()
     #plot_speed(r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Speed\\', 'TEST_VIS', 'LeftHand')
-
-
-# [motion["RightHand"], motion["RightForeArm"], motion["RightArm"], motion["RightShoulder"],
-#  motion["RightHandThumb1"], motion["RightHandThumb2"], motion["RightHandThumb3"],
-#  motion["RightInHandIndex"], motion["RightHandIndex1"], motion["RightHandIndex2"],
-#  motion["RightHandIndex3"], motion["RightInHandMiddle"], motion["RightHandMiddle1"],
-#  motion["RightHandMiddle2"], motion["RightHandMiddle3"]]
-
-# test_full_batch(r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Batch_Test', joints_to_append=['RightForeArm', 'RightHandThumb1', 'RightHandThumb2', '"RightHandThumb3', 'RightInHandIndex', 'RightHandIndex1', 'RightHandIndex2', 'RightHandIndex3', 'RightInHandMiddle', 'RightHandMiddle1', 'RightHandMiddle2', 'RightHandMiddle3'])
