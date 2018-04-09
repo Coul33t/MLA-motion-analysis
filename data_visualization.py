@@ -16,6 +16,8 @@ from scipy.signal import butter, lfilter
 from data_import import data_gathering_dict
 
 from tools import natural_keys
+
+import constants as cst
 #TODO : better data visualization function
 
 
@@ -162,11 +164,23 @@ def plot_2d_dual(data, true_class, clu_class, label1='NONE_1', label2='NONE_2'):
    
     plt.show()
 
-def plot_data_k_means(data, save=False, name='foo'):
+#TODO: add a red thing at the best value (depending on the computed score)
+def plot_data_k_means(data, display=False, save=False, name='foo', path=None, graph_title=None, x_label=None, y_label=None):
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
     color=iter(cm.rainbow(np.linspace(0,1,len(data))))
+
+    if y_label == 'ss':
+        plt.ylim((0,1))
+        plt.axhline(y=0.5, color='black', linestyle='dotted', linewidth=1)
+
+    if graph_title:
+        plt.title(graph_title)
+    if x_label:
+        ax.set_xlabel(x_label)
+    if y_label:
+        ax.set_ylabel(y_label)
 
     for joint in data:
         c = next(color)
@@ -174,14 +188,80 @@ def plot_data_k_means(data, save=False, name='foo'):
         # clusters from 2 to 10
         x = np.linspace(2, len(y)+1, len(y))
 
-        ax.plot(x, y, '-', color=c, label=joint)
+        joint_name = joint
+
+        joint_name = joint_name.split(',')
+        for i, elem in enumerate(joint_name):
+            joint_name[i] = cst.joints_name_corres[elem]
+        joint_name = ', '.join(joint_name)
+
+        ax.plot(x, y, '-', color=c, label=joint_name)
 
     plt.legend()
 
     if save:
-        plt.savefig(name + '.png')
-    else:
+        if path:
+            if not os.path.exists(path):
+                os.makedirs(path)
+            plt.savefig(path + name + '.png', dpi=600)
+        else:
+            plt.savefig(name + '.png', dpi=600)
+    if display:
         plt.show()
+
+    plt.close()
+
+def plot_data_k_means_PCA(data, labels):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+
+def plot_res(res_data, metrics='all', save=False, name='foo'):
+    
+
+    fig = plt.figure()
+
+    rows = 2
+
+    if len(metrics) == 1:
+        rows = 1
+
+    columns = math.ceil(len(metrics)/2)
+    # rows, columns, current plot
+
+    # PSEUDO-CODE (basically Python but whatever)
+    # Actually Python lol
+
+    # OMG MY get_res() FUNCTION IS SO AWESOME
+    # THANK YOU PAST ME FOR TAKING THE TIME TO CODE A SO AWESOME FUNCTION
+
+    # For each desired metric plot
+    for i,m in enumerate(metrics):
+        
+        joint_combination = set()
+
+        for res in res_data.results_list:
+            joint_combination.add(res['joint_used'])
+
+        ax = fig.add_subplot(rows, columns, i)
+        color=iter(cm.rainbow(np.linspace(0,1,len(joint_combination))))
+
+        for joint in joint_combination:
+            c = next(color)
+            y = 0 # TODO: FINISH
+            # clusters from 2 to 10
+            x = np.linspace(2, len(y)+1, len(y))
+
+            ax.plot(x, y, '-', color=c, label=joint)
+
+        plt.legend()
+
+        if save:
+            plt.savefig(name + '.png')
+        else:
+            plt.show()
+        
+
 
 def simple_plot_2d(data):
     data = np.asarray(data)
@@ -247,4 +327,18 @@ def test():
             corr_mat[i][j] = corr_mat[i][j]*factor    
 
     print('TEST : {}'.format(np.argmax(correlate(data[1], data[1]))))
+    pdb.set_trace()
+
+
+if __name__ == '__main__':
+
+    from data_import import json_import
+    path = r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Speed'
+    yo = json_import(path, 'TEST_VIS')
+    yo = yo[0]
+    nnorm = yo.get_datatype('Norm')
+    snorm = yo.get_datatype('SavgoledNorm')
+    nnormv = nnorm.get_joint('LeftHand')
+    snormv = snorm.get_joint('LeftHand')
+
     pdb.set_trace()
