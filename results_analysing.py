@@ -1,5 +1,6 @@
 import pdb
 
+import numpy as np
 import os
 import json
 
@@ -29,6 +30,8 @@ class Results:
 
             # Else, it's nothing special (either a list or a dict or a value)
             else:
+                if isinstance(value, np.ndarray):
+                    value = value.tolist()
                 res_dict[key] = value
 
             self.list_of_properties.add(key)
@@ -65,19 +68,24 @@ class Results:
         res_return = []
 
         for res in self.result_list:
+            # Must use a tmp_res, see below (l.82)
+            tmp_res = res
             valid = True
 
             for key, val in kwargs.items():
 
-                # It means that the key is in a dictionnary
-                if key not in res.keys():
+                # It means that the key is in a dictionnary or doesn't exist
+                if key not in tmp_res.keys():
                     key_found_in_subdict = False
                     # We iterate over the key/values
-                    for key_inner_dict, val_inner_dict in res.items():
+                    for key_inner_dict, val_inner_dict in tmp_res.items():
                         # If the value is a dict, we try to find the original key inside it
                         if isinstance(val_inner_dict, dict):
-                            if key in val_inner_dict.keys():                        
-                                res = val_inner_dict
+                            if key in val_inner_dict.keys():
+                                # In this case, if we do not use a tmp_res, the appended
+                                # value will be just the dict
+                                # (original line was ' res = val_inner_dict ')                        
+                                tmp_res = val_inner_dict
                                 key_found_in_subdict = True
 
                     if not key_found_in_subdict:
@@ -85,27 +93,27 @@ class Results:
                         break
 
                 if val[1] == 'eq':
-                    if res[key] != val[0]:
+                    if val[0] != tmp_res[key]:
                         valid = False
                         break
 
                 elif val[1] == 'inf':
-                    if val[0] < res[key] :
+                    if val[0] < tmp_res[key] :
                         valid = False
                         break
 
                 elif val[1] == 'sup':
-                    if val[0] > res[key]:
+                    if val[0] > tmp_res[key]:
                         valid = False
                         break
 
                 elif val[1] == 'infeq':
-                    if val[0] <= res[key]:
+                    if val[0] <= tmp_res[key]:
                         valid = False
                         break
 
                 elif val[1] == 'supeq':
-                    if val[0] >= res[key]:
+                    if val[0] >= tmp_res[key]:
                         valid = False
                         break
 
@@ -147,64 +155,80 @@ class Results:
 
             print('\n-------------------------------------')
 
-    # TODO: redo (no adhoc data)
     def export_data(self, path, data_to_export='all', text_export=True, json_export=True):
         """
             Exports the data to a .txt file
         """
+
+        # If the parameter data_to_export is empty, we export nothing
+        # (e.g. get_res was called but returned no values)
+        if len(data_to_export) == 0:
+            return
+
         if data_to_export == 'all':
             data_to_export = self.result_list
 
         if json_export:
             json_list = []
 
+        # Making up a name for the file and opening it
+        if text_export:
+            file_name_txt = 'output_' + self.result_list[0]['data_used'].replace(" ", "").replace(",", "") + '.txt'   
+            txt_mode = 'w'
+            if os.path.exists(path + file_name_txt):
+                txt_mode = 'a'
+            else:
+                # If the directory does not exists
+                if not os.path.exists(path):
+                    os.makedirs(path)
+            f_txt = open(path + file_name_txt, txt_mode)
+
+        # For every result
         for res in data_to_export:
             
+            # For JSON, we export them at the end, so we just append what to export
             if json_export:
                 json_list.append(res)
 
+            # For text export, we format it to be a bit cleaner
             if text_export:
-                file_name_txt = 'output_' + res['data_used'].replace(" ", "").replace(",", "") + '.txt'   
-
-                txt_mode = 'w'
-            
-                if os.path.exists(path + '//' + file_name_txt):
-                    txt_mode = 'a'
+                
+                if txt_mode == 'a':
+                    f_txt.write('\n\n\n')
                
+                f_txt.write('\n-------------------------------------')
 
-                with open(path + '//' + file_name_txt, txt_mode) as f_txt:
-                    if txt_mode == 'a':
-                        f_txt.write('\n\n\n')
+                # For everything in result
+                for key, values in res.items():
 
-                    f_txt.write('Data used: ' + res['data_used'])
-                    f_txt.write('\nk = ' + str(res['k']))
-                    f_txt.write('\nJoints used: ' + res['joints_used'])
+                    # If it's a dic
+                    if isinstance(values, dict):
+                        # We replace the "_" with " " for the keys values (more readable)
+                        f_txt.write('\n{}:'.format(key.replace("_", " ")))
+                        
+                        # Then, for each values inside the dic
+                        for inside_key, inside_values in values.items():
+                            # Casting numerical values to string
+                            if isinstance(inside_values, int):
+                                inside_values = str(inside_values)
+                            # Same formatting as above  
+                            f_txt.write("\n\t{}: {}".format(inside_key.replace("_", " "), inside_values))
+                    # Else, no formating necessary
+                    else:
+                        # Casting numerical values to string
+                        if isinstance(values, int):
+                            values = str(values)
+                        # Same formatting as above
+                        f_txt.write('\n{}: {}'.format(key.replace("_", " "), values))
 
-                    f_txt.write('\n-------------------------------------')
-                    f_txt.write('\nGlobal inertia: ' + str(res['global_inertia']))
-                    f_txt.write('\n-------------------------------------')
 
-                    for c in res['per_cluster_inertia']:
-                        f_txt.write('\n' + c + ' inertia: ' + str(res['per_cluster_inertia'][c]))
+                f_txt.write('\n-------------------------------------')
 
-                    f_txt.write('\n-------------------------------------')
-
-                    for m in res['metrics']:
-                        f_txt.write('\n' + m + ': ' + str(res['metrics'][m]))
-
-                    f_txt.write('\n-------------------------------------')
-
-                    for i, c in enumerate(res['motion_repartition']):
-                        if i != 0:
-                            f_txt.write('\n')
-                        try:
-                            f_txt.write('\nMotions in ' + c + ': ' + ', '.join(res['motion_repartition'][c]))
-                        # Ok that's ugly (and because of cluster_composition)
-                        except TypeError:
-                            f_txt.write('\n{}: {}'.format(c, res['motion_repartition'][c]))
-
-                    f_txt.write('\n-------------------------------------')
-
+        # If it was text export, we close the file since we're done with it
+        if text_export:
+            f_txt.close()
+            
+        # For JSON export
         if json_export and data_to_export:
             file_name_json = 'output_' + self.result_list[0]['data_used'].replace(" ", "").replace(",", "") + '.json'
 
@@ -212,10 +236,16 @@ class Results:
             json_mode = 'w'
 
             # If the file already exists, we append to it instead
-            if os.path.exists(path + '//' + file_name_json):
+            if os.path.exists(path + file_name_json):
                 json_mode = 'a'
 
-            with open(path + '//' + file_name_json, json_mode) as json_f:
+            else:
+                # If the directory does not exists
+                if not os.path.exists(path):
+                    os.makedirs(path)
+
+            # We dump it inside. Yup, it's as simple as that.
+            with open(path + file_name_json, json_mode) as json_f:
                 json.dump(json_list, json_f)
 
 
