@@ -3,6 +3,8 @@ import re
 
 from collections import OrderedDict
 
+import constants as cst
+
 def file_name_gathering(folder_path):
     """
         Collects the file name from folder_path.
@@ -102,3 +104,27 @@ def motion_dict_to_list(data_dict):
         new_list.append([item[i] for item in llist])
 
     return new_list
+
+def string_length_shortening(s, max_size=50):
+    if isinstance(s, list):
+        s = '_'.join(s)
+
+    if len(s) > max_size:
+        return ''.join([c for c in s if (c.isupper() or c == '_')])
+    else:
+        return s
+
+def string_redundancy_remover(s):
+    for name in cst.data_types_base_name:
+
+        # Finding the first occurence of the data type name
+        idx = s.find(name) + 1
+        # Erasing the rest of it
+        s = s[:idx] + s[idx:].replace(name, '_')
+
+    return s
+
+if __name__ == '__main__':
+    s = 'output_BegMaxEndSpeedDirxBegMaxEndSpeedDiryBegMaxEndSpeedDirzBegMaxEndSpeedxBegMaxEndSpeedyBegMaxEndSpeedz'
+    print(string_redundancy_remover(s))
+
