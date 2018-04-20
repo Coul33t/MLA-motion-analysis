@@ -4,6 +4,9 @@ import numpy as np
 import os
 import json
 
+from tools import (string_length_shortening,
+                   string_redundancy_remover)
+
 class Results:
     def __init__(self):
         # Will contain a list of dict
@@ -173,7 +176,9 @@ class Results:
 
         # Making up a name for the file and opening it
         if text_export:
-            file_name_txt = 'output_' + self.result_list[0]['data_used'].replace(" ", "").replace(",", "") + '.txt'   
+            file_name_txt = 'output_' + self.result_list[0]['data_used'].replace(" ", "").replace(",", "")
+            file_name_txt = string_redundancy_remover(file_name_txt) + '.txt'
+
             txt_mode = 'w'
             if os.path.exists(path + file_name_txt):
                 txt_mode = 'a'
@@ -181,6 +186,7 @@ class Results:
                 # If the directory does not exists
                 if not os.path.exists(path):
                     os.makedirs(path)
+            
             f_txt = open(path + file_name_txt, txt_mode)
 
         # For every result
@@ -230,7 +236,8 @@ class Results:
             
         # For JSON export
         if json_export and data_to_export:
-            file_name_json = 'output_' + self.result_list[0]['data_used'].replace(" ", "").replace(",", "") + '.json'
+            file_name_json = 'output_' + self.result_list[0]['data_used'].replace(" ", "").replace(",", "")
+            file_name_json = string_redundancy_remover(file_name_json) + '.json'
 
             # By default, we create and write in the file
             json_mode = 'w'
