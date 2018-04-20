@@ -211,6 +211,51 @@ def plot_data_k_means(data, display=False, save=False, name='foo', path=None, gr
 
     plt.close()
 
+def plot_data_sub_k_means(data, joint, display=False, save=False, name='foo', path=None, graph_title=None, x_label=None, y_label=None):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    color=iter(cm.rainbow(np.linspace(0,1,len(data))))
+
+    if y_label == 'ss':
+        plt.ylim((0,1))
+        plt.axhline(y=0.5, color='black', linestyle='dotted', linewidth=1)
+
+    if graph_title:
+        plt.title(graph_title)
+    if x_label:
+        ax.set_xlabel(x_label)
+    if y_label:
+        ax.set_ylabel(y_label)
+
+    y = [k[1] for k in data]
+    # clusters from 2 to 10
+    x = np.linspace(2, len(y)+1, len(y))
+
+    joint_name = joint
+    if not isinstance(joint_name, list):
+        joint_name = [joint_name]
+
+    for i, elem in enumerate(joint_name):
+        joint_name[i] = cst.joints_name_corres[elem]
+    joint_name = ', '.join(joint_name)
+
+    ax.plot(x, y, '-', color='red', label=joint_name)
+
+    plt.legend()
+
+    if save:
+        if path:
+            if not os.path.exists(path):
+                os.makedirs(path)
+            plt.savefig(path + name + '.png', dpi=600)
+        else:
+            plt.savefig(name + '.png', dpi=600)
+    if display:
+        plt.show()
+
+    plt.close()
+
 def plot_data_k_means_PCA(data, labels):
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -286,13 +331,22 @@ def simple_plot_2d_2_curves(data1, data2):
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    x = np.linspace(0, data1.shape[0]-1, data1.shape[0])
-    
+    len_total = max(data1.shape[1], data2.shape[1])
+    x = np.linspace(0, len_total-1, len_total)
     ax.set_xlabel('Frame')
     ax.set_ylabel('Linear speed (m/s)')
+    
+    if data1.shape[1] > data2.shape[1]:
+        data2 = np.concatenate((data2[0], np.asarray([None for x in range(data1.shape[1] - data2.shape[1])])))
+        data1 = data1[0]
+    else:
+        data1 = np.concatenate((data1[0], np.asarray([None for x in range(data2.shape[1] - data1.shape[1])])))
+        data2 = data2[0]
 
-    ax.plot(x, data1.reshape(data1.shape[0]), color='blue')
-    ax.plot(x, data2.reshape(data2.shape[0]), color='red')
+    pdb.set_trace()
+    ax.plot(x, data1, color='blue')
+    ax.plot(x, data2, color='red')
+
 
     plt.show()
 
