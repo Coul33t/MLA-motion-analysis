@@ -28,7 +28,7 @@ def data_gathering_dict(folder_path, joints_to_append=None):
     for filename in file_list:
 
         # Open the file
-        with open(folder_path+'\\'+filename, 'r') as file_data:
+        with open(folder_path+'/'+filename, 'r') as file_data:
             text = file_data.read()
 
             # For each line
@@ -55,9 +55,9 @@ def data_gathering_full(folder_path, joints_to_append=None):
         
         motion_data = []
         
-        for subfolders in return_files(folder_path + '\\' + folder, '.json', False):
-            print(folder_path + '\\' + folder + '\\' + subfolders)
-            full_data.append(data_gathering_dict(folder_path + '\\' + folder + '\\' + subfolders))
+        for subfolders in return_files(folder_path + '/' + folder, '.json', False):
+            print(folder_path + '/' + folder + '/' + subfolders)
+            full_data.append(data_gathering_dict(folder_path + '/' + folder + '/' + subfolders))
 
     return full_data
     
@@ -70,8 +70,8 @@ def adhoc_gathering(folder_path, joints_to_append=None):
         motion_data = []
         tmp_data = []
 
-        for subfolders in return_files(folder_path + '\\' + folder, '.json', False):
-            tmp_data.append(data_gathering_dict(folder_path + '\\' + folder + '\\' + subfolders, joints_to_append))
+        for subfolders in return_files(folder_path + '/' + folder, '.json', False):
+            tmp_data.append(data_gathering_dict(folder_path + '/' + folder + '/' + subfolders, joints_to_append))
 
         tmp_data = merge_dict(tmp_data)
         full_data.append(tmp_data)
@@ -137,13 +137,13 @@ def return_data(f, joints_to_append=None):
         
         motion_data = []
         
-        for subfolders in return_files(f + '\\' + folder, '.json', False):
+        for subfolders in return_files(f + '/' + folder, '.json', False):
             
             seg_data = []
             
-            for file in return_files (f + '\\' + folder + '\\' + subfolders, '.csv', True):
+            for file in return_files (f + '/' + folder + '/' + subfolders, '.csv', True):
 
-                seg_data.append(file_gathering_dict(f + '\\' + folder + '\\' + subfolders + '\\' + file))
+                seg_data.append(file_gathering_dict(f + '/' + folder + '/' + subfolders + '/' + file))
                 print(folder + ' ' + subfolders + ' ' + file)
 
             motion_data.append(seg_data)
@@ -169,13 +169,13 @@ def return_data_with_names(f, joints_to_append=None):
         
         motion_data = []
         
-        for subfolder in return_files(f + '\\' + folder, '.json', False):
+        for subfolder in return_files(f + '/' + folder, '.json', False):
             
             seg_data = []
             
-            for file in return_files (f + '\\' + folder + '\\' + subfolder, '.csv', True):
+            for file in return_files (f + '/' + folder + '/' + subfolder, '.csv', True):
 
-                seg_data.append([file, file_gathering_dict(f + '\\' + folder + '\\' + subfolder + '\\' + file)])
+                seg_data.append([file, file_gathering_dict(f + '/' + folder + '/' + subfolder + '/' + file)])
                 print(folder + ' ' + subfolder + ' ' + file)
 
             motion_data.append([subfolder, seg_data])
@@ -186,7 +186,7 @@ def return_data_with_names(f, joints_to_append=None):
 
 def json_import(folder_path, folder_name=None):
     """
-        Import the data from json files. Each motion is put into a Motion class
+        Import the data from json files. Each motion is put into a Motion class.
     """
     if not folder_name:
         folder_name = ['JSON_BATCH_TEST']
@@ -194,9 +194,9 @@ def json_import(folder_path, folder_name=None):
     full_data = []
 
     for folder in return_files(folder_path, folder_name):
-        for subfolders in return_files(folder_path + '\\' + folder, '.json', False):
+        for subfolders in return_files(folder_path + '/' + folder, '.json', False):
 
-            file_list = file_name_gathering(folder_path + '\\' + folder + '\\' + subfolders)
+            file_list = file_name_gathering(folder_path + '/' + folder + '/' + subfolders)
             file_list.sort(key=natural_keys)
 
 
@@ -204,10 +204,10 @@ def json_import(folder_path, folder_name=None):
                 
                 # Stripping the '.json'
                 motion = Motion(name=file[:-5])
-                motion.pre_processing_info = json.load(open(folder_path + '\\' + folder + '\\' + 'motion_information.json'))
-                motion.post_processing_info = json.load(open(folder_path + '\\' + folder + '\\' + 'segmentation_information.json'))
+                motion.pre_processing_info = json.load(open(folder_path + '/' + folder + '/' + 'motion_information.json'))
+                motion.post_processing_info = json.load(open(folder_path + '/' + folder + '/' + 'segmentation_information.json'))
 
-                with open(folder_path + '\\' + folder + '\\' + subfolders + '\\' + file, 'r') as f:
+                with open(folder_path + '/' + folder + '/' + subfolders + '/' + file, 'r') as f:
                     json_file = json.load(f)
                     for key in list(json_file.keys()):
                         motion.add_datatype(key, json_file[key])
@@ -216,6 +216,25 @@ def json_import(folder_path, folder_name=None):
 
     return full_data
 
+def json_specific_import(folder_path, file_list):
+    """
+        Import the data from specified json files. Each motion is put into a Motion class.
+    """
+    full_data = []
+
+    for file in file_list:              
+        motion = Motion(name=file)
+        motion.pre_processing_info = json.load(open(folder_path + '/' + file + '/' + 'motion_information.json'))
+        motion.post_processing_info = json.load(open(folder_path + '/' + file + '/' + 'segmentation_information.json'))
+
+        with open(folder_path + '/' + file + '/data/' + file + '.json', 'r') as f:
+            json_file = json.load(f)
+            for key in list(json_file.keys()):
+                motion.add_datatype(key, json_file[key])
+
+        full_data.append(motion)
+
+    return full_data
 
 
 if __name__ == '__main__':
