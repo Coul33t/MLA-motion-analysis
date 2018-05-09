@@ -65,6 +65,12 @@ data_types_corres = {'BegMaxEndSpeedNorm_BegMaxEndSpeedx_BegMaxEndSpeedy_BegMaxE
                      'Accelerationx_Accelerationy_Accelerationz': 'Accelerationxyz',
                      'AccelerationxAccelerationyAccelerationz': 'Accelerationxyz',
 
+                     'SpeedDirx_SpeedDiry_SpeedDirz': 'SpeedDirxyz',
+                     'SpeedDirxSpeedDirySpeedDirz': 'SpeedDirxyz',
+
+                     'AccelerationDirx_AccelerationDiry_AccelerationDirz': 'AccDirxyz',
+                     'AccelerationDirxAccelerationDiryAccelerationDirz': 'AccDirxyz',
+
                      'Dirx_Diry_Dirz': 'Dirxyz',
                      'DirxDiryDirz': 'Dirxyz',
 

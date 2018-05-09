@@ -12,9 +12,6 @@ from scipy.signal import savgol_filter, savgol_coeffs, correlate
 
 from scipy.signal import butter, lfilter
 
-
-from data_import import data_gathering_dict
-
 from tools import natural_keys
 
 import constants as cst
@@ -308,7 +305,7 @@ def plot_res(res_data, metrics='all', save=False, name='foo'):
         
 
 
-def simple_plot_2d(data):
+def simple_plot_2d(data, axis_lim=None):
     data = np.asarray(data)
     
     fig = plt.figure()
@@ -319,7 +316,8 @@ def simple_plot_2d(data):
     ax.set_xlabel('Frame')
     ax.set_ylabel('Linear speed (m/s)')
 
-
+    if axis_lim:
+        ax.set_xlim(axis_lim)
     ax.plot(x, data.reshape(data.shape[0]), color='blue')
 
     plt.show()
@@ -330,6 +328,7 @@ def simple_plot_2d_2_curves(data1, data2):
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
+
 
     len_total = max(data1.shape[1], data2.shape[1])
     x = np.linspace(0, len_total-1, len_total)
@@ -387,12 +386,15 @@ def test():
 if __name__ == '__main__':
 
     from data_import import json_import
-    path = r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Speed'
+    path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed'
     yo = json_import(path, 'TEST_VIS')
     yo = yo[0]
-    nnorm = yo.get_datatype('Norm')
-    snorm = yo.get_datatype('SavgoledNorm')
+
+    norm = yo.get_datatype('Norm')
+    nnorm = yo.get_datatype('SavgoledNorm')
+    snorm = yo.get_datatype('NewThrowNorm')
+    normv = norm.get_joint('LeftHand')
     nnormv = nnorm.get_joint('LeftHand')
     snormv = snorm.get_joint('LeftHand')
 
-    pdb.set_trace()
+    pdb.set_trace()   

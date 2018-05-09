@@ -124,6 +124,7 @@ def string_redundancy_remover(s):
 
     return s
 
+
 if __name__ == '__main__':
     s = 'output_BegMaxEndSpeedDirxBegMaxEndSpeedDiryBegMaxEndSpeedDirzBegMaxEndSpeedxBegMaxEndSpeedyBegMaxEndSpeedz'
     print(string_redundancy_remover(s))

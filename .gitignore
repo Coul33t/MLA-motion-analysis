@@ -106,3 +106,4 @@ venv.bak/
 # results stuff
 test_export_class/
 output/
+Profiles/

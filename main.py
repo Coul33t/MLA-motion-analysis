@@ -3,7 +3,7 @@
 # Native packages
 import os
 import re
-#TODO: remove when Python 3.7 is out (dict will keep the insertion value)
+# TODO: remove when Python 3.7 is out (dict will keep the insertion value)
 from collections import OrderedDict
 
 import json
@@ -21,17 +21,16 @@ from tools import (flatten_list,
                    string_redundancy_remover)
 
 # Data import functions
-from data_import import (data_gathering_dict,
-                         return_files,
+from data_import import (return_files,
                          json_import,
                          json_specific_import)
 
 # Clustering algorithms and metrics computing
-from algos.kmeans_algo import (kmeans_algo, 
-                               per_cluster_inertia, 
-                               f_score_computing, 
-                               adjusted_mutual_info_score_computing, 
-                               adjusted_rand_score_computing, 
+from algos.kmeans_algo import (kmeans_algo,
+                               per_cluster_inertia,
+                               f_score_computing,
+                               adjusted_mutual_info_score_computing,
+                               adjusted_rand_score_computing,
                                silhouette_score_computing,
                                calinski_harabaz_score_computing)
 
@@ -49,9 +48,11 @@ import data_labels as dl
 # Constants (well more like " huge lists " but whatever)
 import constants as cst
 
+
 def joint_selection(data, joints_to_append):
     """
-        This function returns a list of desired joints data, from a list of Motion objects.
+        This function returns a list of desired joints data,
+        from a list of Motion objects.
     """
 
     # We gonna switch from dict to OrederedDict, to ensure that each
@@ -60,9 +61,9 @@ def joint_selection(data, joints_to_append):
 
     datatypes = data[0].get_datatypes_names()
 
-    # If joints_to_append isn't specified, we take all the joints.
-    # Just to be sure that the order won't change between 2 motion dicts,
-    # we take the keys of one motion and use it as the reference for insertion order
+    # If joints_to_append isn't specified, we take all the joints. Just to be
+    # sure that the order won't change between 2 motion dicts, we take the keys
+    # of one motion and use it as the reference for insertion order
     if not joints_to_append:
         joints_to_append = data[0].get_joint_list()
 
@@ -73,8 +74,8 @@ def joint_selection(data, joints_to_append):
         # For each datatype
         for datatype in datatypes:
 
-            # We use an OrderedDict. Since we iterate over the joints_to_append list,
-            # the order is ensured to be the same for each motion
+            # We use an OrderedDict. Since we iterate over the joints_to_append
+            # list,  the order is ensured to be the same for each motion
             joints_selected = OrderedDict()
 
             # For each joint to append
@@ -91,6 +92,7 @@ def joint_selection(data, joints_to_append):
 
     return selected_data
 
+
 def data_selection(data, data_to_keep):
     """
         This function returns an array of desired features.
@@ -100,7 +102,8 @@ def data_selection(data, data_to_keep):
 
     # For each motion
     # motion[0] is the filename
-    # motion[1] are the values, ordered by joints and datatypes (datatype->joints->values)
+    # motion[1] are the values, ordered by joints and datatypes
+    # (datatype->joints->values)
     for motion in data:
         motion_feat = OrderedDict()
 
@@ -124,6 +127,7 @@ def data_selection(data, data_to_keep):
     # convenient to use
     return np.asarray(features)
 
+
 def distance_matrix_computing(data):
     """
         Compute the euclidean distance between each sample of the data.
@@ -136,6 +140,7 @@ def distance_matrix_computing(data):
             distance_matrix[i][j] = abs(sum(data[i] - data[j]))
 
     return distance_matrix
+
 
 def compute_mean_std(d_m, success_indexes, natural_indexes=False):
     """
@@ -181,14 +186,16 @@ def compute_mean_std(d_m, success_indexes, natural_indexes=False):
             np.mean(cutted_failure_distance_matrix),
             np.std(cutted_failure_distance_matrix)]
 
-def test_full_batch_k_var(path, import_find, validate_data = False,
-                          joint_to_use=None, data_to_select=None, 
-                          true_labels=None, verbose=False, to_file=True, 
+
+def test_full_batch_k_var(path, import_find, validate_data=False,
+                          joint_to_use=None, data_to_select=None,
+                          true_labels=None, verbose=False, to_file=True,
                           to_json=True, display_graph=False,
                           save_graph=False, data_to_graph=None,
                           only_success=False):
     """
-        This function run a k-means algorithm with varying k values, on each joint.
+        This function run a k-means algorithm with varying k values,
+        on each joint.
     """
     # To extract the succesful motion only, we need the ground truth with c = 2
     # (c0 = failure, c1 = success)
@@ -210,7 +217,6 @@ def test_full_batch_k_var(path, import_find, validate_data = False,
     # Else, it's just a name, so we import their data
     else:
         original_data = json_import(path, import_find)
-
 
     if not original_data:
         print('ERROR: no data found (check your names).')
@@ -271,11 +277,13 @@ def test_full_batch_k_var(path, import_find, validate_data = False,
             if isinstance(joint, list):
                 joint_name = ','.join(joint)
 
-            # We keep the joints' data we're interested in (from the motion class)
+            # We keep the joints' data we're interested in
+            # (from the motion class)
             selected_data = joint_selection(original_data, joint)
 
             # We select the data we want and we put them in the right shape
-            # for the algorithm [sample1[f1, f2, ...], sample2[f1, f2, f3...], ...]
+            # for the algorithm
+            # [sample1[f1, f2, ...], sample2[f1, f2, f3...], ...]
             features = data_selection(selected_data, data_to_select)
 
             # If we only work with the succesful motions,
@@ -308,7 +316,6 @@ def test_full_batch_k_var(path, import_find, validate_data = False,
                 metrics['ss'] = silhouette_score_computing(features, res.labels_)
                 metrics['ch'] = calinski_harabaz_score_computing(features, res.labels_)
 
-
             # Checking the inertia for the sets
             if res.inertia_ < 50:
                 low_inertia.add(joint_name)
@@ -328,8 +335,8 @@ def test_full_batch_k_var(path, import_find, validate_data = False,
             if true_labels and len(set(true_labels)) == 2:
                 c_comp = clusters_composition(res.labels_, true_labels, len(original_data), verbose=False)
             else:
-                c_comp = clusters_composition_name(res.labels_, len(original_data), 
-                                                   original_names=np.asarray([o.name for o in original_data]), 
+                c_comp = clusters_composition_name(res.labels_, len(original_data),
+                                                   original_names=np.asarray([o.name for o in original_data]),
                                                    verbose=False)
 
             # Appending the value for the current k to the results OrderedDict
@@ -346,7 +353,7 @@ def test_full_batch_k_var(path, import_find, validate_data = False,
 
             # Add the current algorithm output to the results
             results.add_values(k=k, data_used=data_to_select, joints_used=joint, centroids=res.cluster_centers_,
-                               centroids_diff=centroids_diff, global_inertia=res.inertia_, 
+                               centroids_diff=centroids_diff, global_inertia=res.inertia_,
                                per_cluster_inertia=clusters_inertia, metrics=metrics, motion_repartition=c_comp)
 
     # for key, val in res_k.items():
@@ -358,7 +365,7 @@ def test_full_batch_k_var(path, import_find, validate_data = False,
     #             max_val = elem[1]
     #             k = elem[0]
 
-    #     print(f"{key}: {max_val}({k})") 
+    #     print(f"{key}: {max_val}({k})")
 
     if verbose:
         print("Low inertia joints (< 50):{}\n".format(low_inertia))
@@ -367,7 +374,7 @@ def test_full_batch_k_var(path, import_find, validate_data = False,
 
     path_to_export = ''
     # If the length of the folder is too long, we shorten it
-    folder_name = string_length_shortening(import_find[0], max_size=50)  
+    folder_name = string_length_shortening(import_find[0], max_size=50)
     path_to_export = r'C:/Users/quentin/Documents/Programmation/Python/ml_mla/test_export_class/' + folder_name +'/'
 
 
@@ -377,7 +384,7 @@ def test_full_batch_k_var(path, import_find, validate_data = False,
     # Exporting the data
     results.export_data(path=path_to_export,
                         data_to_export=data_to_export,
-                        text_export=to_file, 
+                        text_export=to_file,
                         json_export=to_json)
 
     # Plotting or saving the desired values
@@ -391,14 +398,14 @@ def test_full_batch_k_var(path, import_find, validate_data = False,
                 plot_save_name += '_only_success'
             if true_labels:
                 plot_save_name += '_c' + str(len(set(true_labels)))
-        
+
         plot_save_name = string_redundancy_remover(plot_save_name)
 
-        plot_data_k_means(res_k, display=display_graph, save=save_graph, 
-                          name=plot_save_name, path=path_to_export, 
+        plot_data_k_means(res_k, display=display_graph, save=save_graph,
+                          name=plot_save_name, path=path_to_export,
                           graph_title=plot_save_name.replace('_', ' '),
                           x_label='k value', y_label=data_to_graph)
-    
+
 def clusters_composition(labels, true_labels, sample_nb, verbose=False):
     """
         For each k in labels, this function returns the clusters' composition.
@@ -426,7 +433,7 @@ def clusters_composition(labels, true_labels, sample_nb, verbose=False):
         # set(success) & set(sample_idx) -> gives the intersection of the 2 sets
         # (values that are in the 2 lists)
         if verbose:
-            print("Success in c{}: {} / Failure in c{}: {}".format(k, len(set(success) & set(sample_idx)), 
+            print("Success in c{}: {} / Failure in c{}: {}".format(k, len(set(success) & set(sample_idx)),
                                                                    k, len(set(failure) & set(sample_idx))))
     return c_composition
 
@@ -480,7 +487,7 @@ def k_means_second_pass(file_path, result_path, file_name, person_name):
     for one_res in res_total:
         print(f'Processing for {one_res["k"]} clusters')
         data_sub_separation = []
-        
+
         # We get the different motion repartition
         for cluster in one_res['motion_repartition'].keys():
             data_sub_separation.append([name+'Char00' for name in one_res['motion_repartition'][cluster]])
@@ -496,7 +503,7 @@ def k_means_second_pass(file_path, result_path, file_name, person_name):
             joint = one_res['joints_used']
             if ',' in one_res['joints_used']:
                 joint = one_res['joints_used'].replace(' ', '').split(',')
-            
+
             data_to_select = one_res['data_used']
             if ',' in one_res['data_used']:
                 data_to_select = one_res['data_used'].replace(' ', '').split(',')
@@ -542,8 +549,8 @@ def k_means_second_pass(file_path, result_path, file_name, person_name):
 
                 # Computing the inertia for each cluster
                 clusters_inertia = per_cluster_inertia(features, res.cluster_centers_, res.labels_)
-                c_comp = clusters_composition_name(res.labels_, len(sub_data), 
-                                                   original_names=np.asarray([o.name for o in sub_data]), 
+                c_comp = clusters_composition_name(res.labels_, len(sub_data),
+                                                   original_names=np.asarray([o.name for o in sub_data]),
                                                    verbose=False)
 
                 # Appending the value for the current k to the results OrderedDict
@@ -559,9 +566,9 @@ def k_means_second_pass(file_path, result_path, file_name, person_name):
 
                 # Add the current algorithm output to the results
                 results.add_values(k=k, data_used=data_to_select, joints_used=joint, centroids=res.cluster_centers_,
-                                   centroids_diff=centroids_diff, global_inertia=res.inertia_, 
+                                   centroids_diff=centroids_diff, global_inertia=res.inertia_,
                                    per_cluster_inertia=clusters_inertia, metrics=metrics, motion_repartition=c_comp)
-            
+
             path_to_export = ''
 
             # If the length of the folder is too long, we shorten it
@@ -581,7 +588,7 @@ def k_means_second_pass(file_path, result_path, file_name, person_name):
                 # Exporting the data
                 results.export_data(path=path_to_export,
                                     data_to_export=data_to_export,
-                                    text_export=True, 
+                                    text_export=True,
                                     json_export=True)
 
                 # Placeholder values
@@ -596,8 +603,8 @@ def k_means_second_pass(file_path, result_path, file_name, person_name):
 
                     plot_save_name = plot_save_name.replace('BegMaxEndSpeed', 'BMES')
 
-                    plot_data_sub_k_means(res_k, joint=joint, display=display_graph, 
-                                          save=save_graph, name=plot_save_name, 
+                    plot_data_sub_k_means(res_k, joint=joint, display=display_graph,
+                                          save=save_graph, name=plot_save_name,
                                           path=path_to_export, graph_title=plot_save_name.replace('_', ' '),
                                           x_label='k value', y_label=data_to_graph)
 
@@ -615,7 +622,7 @@ def k_means_second_pass_all_data(file_path, result_path, file_name, person_name)
         print(f'Processing for {one_res["k"]} clusters')
         print(f'Using {one_res["joints_used"]}')
         data_sub_separation = []
-        
+
         # We get the different motion repartition
         for cluster in one_res['motion_repartition'].keys():
             data_sub_separation.append([name+'Char00' for name in one_res['motion_repartition'][cluster]])
@@ -634,8 +641,8 @@ def k_means_second_pass_all_data(file_path, result_path, file_name, person_name)
 
                 print(f'Running on {data_to_select}')
 
-                sub_data = json_specific_import(file_path, subcomp)  
-                
+                sub_data = json_specific_import(file_path, subcomp)
+
                 data_to_graph = 'ss'
 
                 # This list will contains the result for each k
@@ -678,12 +685,12 @@ def k_means_second_pass_all_data(file_path, result_path, file_name, person_name)
 
                     # Computing the inertia for each cluster
                     clusters_inertia = per_cluster_inertia(features, res.cluster_centers_, res.labels_)
-                    c_comp = clusters_composition_name(res.labels_, len(sub_data), 
-                                                       original_names=np.asarray([o.name for o in sub_data]), 
+                    c_comp = clusters_composition_name(res.labels_, len(sub_data),
+                                                       original_names=np.asarray([o.name for o in sub_data]),
                                                        verbose=False)
 
-                    # Appending the value for the current k to the results OrderedDict
-                                # (used for graph)
+                    # Appending the value for the current k to the results
+                    # OrderedDict (used for graph)
                     if data_to_graph and data_to_graph in metrics.keys():
                                     res_k.append([k, metrics[data_to_graph]])
                     # Compute the distance between each centroids for each dimension
@@ -695,9 +702,9 @@ def k_means_second_pass_all_data(file_path, result_path, file_name, person_name)
 
                     # Add the current algorithm output to the results
                     results.add_values(k=k, data_used=data_to_select, joints_used=joint, centroids=res.cluster_centers_,
-                                       centroids_diff=centroids_diff, global_inertia=res.inertia_, 
+                                       centroids_diff=centroids_diff, global_inertia=res.inertia_,
                                        per_cluster_inertia=clusters_inertia, metrics=metrics, motion_repartition=c_comp)
-                
+
                 path_to_export = ''
 
                 # If the length of the folder is too long, we shorten it
@@ -705,28 +712,42 @@ def k_means_second_pass_all_data(file_path, result_path, file_name, person_name)
                 if not os.path.exists(r'C:/Users/quentin/Documents/Programmation/Python/ml_mla/test_export_class/' + person_name):
                     os.makedirs(r'C:/Users/quentin/Documents/Programmation/Python/ml_mla/test_export_class/' + person_name)
 
-                folder_name = 'SUB_' + str(idx) + '_' + file_name
-                folder_name = folder_name.replace('.json', '')
-                folder_name = folder_name.replace('_output', '')
+                folder_name = file_name
+                folder_name = folder_name.replace('.json', '').replace('_output', '')
                 for key, value in cst.data_types_corres.items():
-                            folder_name = folder_name.replace(key, value)
+                    folder_name = folder_name.replace(key, value)
+                folder_name = folder_name + '_c' + str(one_res['k'])
 
-                subfolder_name = ', '.join(data_to_select).replace(" ", "").replace(",", "")            
-                for key, value in cst.data_types_corres.items():
+                joint_to_text = joint
+                if isinstance(joint_to_text, list):
+                    joint_to_text = '_'.join(joint_to_text)
+                subfolder_name = joint_to_text + '_SUB_' + str(idx)
+                for key, value in cst.joints_name_corres.items():
                     subfolder_name = subfolder_name.replace(key, value)
 
-                path_to_export = r'C:/Users/quentin/Documents/Programmation/Python/ml_mla/test_export_class/' + person_name + '/' + folder_name +'/' + subfolder_name + '/'
+                subsubfolder_name = ', '.join(data_to_select).replace(" ", "").replace(",", "")
+                for key, value in cst.data_types_corres.items():
+                    subsubfolder_name = subsubfolder_name.replace(key, value)
+
+                path_to_export = r'C:/Users/quentin/Documents/Programmation/Python/ml_mla/test_export_class/' + person_name + '/' + folder_name +'/' + subfolder_name + '/' + subsubfolder_name + '/'
 
                 data_to_export = 'all'
-                # data_to_export = results.get_res(ss=[0.5, 'supeq'])
+                data_to_export = results.get_res(ss=[0.5, 'supeq'])
+
+                # if subfolder_name == 'BMESNorm':
+                #     print(r'C:/Users/quentin/Documents/Programmation/Python/ml_mla/test_export_class/' + person_name + '/' + folder_name +'/' + subfolder_name + '/')
+                #     pdb.set_trace()
 
                 if data_to_export:
                     # Exporting the data
                     results.export_data(path=path_to_export,
                                         data_to_export=data_to_export,
-                                        text_export=True, 
+                                        text_export=True,
                                         json_export=True)
 
+                    # if subfolder_name == 'BMESNorm':
+                    #     print(r'C:/Users/quentin/Documents/Programmation/Python/ml_mla/test_export_class/' + person_name + '/' + folder_name +'/' + subfolder_name + '/')
+                    #     pdb.set_trace()
                     # Placeholder values
                     display_graph = False
                     save_graph = True
@@ -740,8 +761,8 @@ def k_means_second_pass_all_data(file_path, result_path, file_name, person_name)
                         for key, value in cst.data_types_corres.items():
                             plot_save_name = plot_save_name.replace(key, value)
 
-                        plot_data_sub_k_means(res_k, joint=joint, display=display_graph, 
-                                              save=save_graph, name=plot_save_name, 
+                        plot_data_sub_k_means(res_k, joint=joint, display=display_graph,
+                                              save=save_graph, name=plot_save_name,
                                               path=path_to_export, graph_title=plot_save_name.replace('_', ' '),
                                               x_label='k value', y_label=data_to_graph)
 
@@ -785,6 +806,8 @@ def main_all_joints():
     right_joints_list = cst.right_joints_list
     left_joints_list = cst.left_joints_list
 
+    people_names = [['Leo', 'right']]
+
     for people in people_names:
         for data_to_select in data_types_combination:
             name = people[0]
@@ -819,7 +842,7 @@ def main_second_pass():
 def main_second_pass_all_data():
     for folder in return_files(r'C:/Users/quentin/Documents/These/Databases/Res/all_ss_05/'):
         for json_file in return_files(r'C:/Users/quentin/Documents/These/Databases/Res/all_ss_05/' + folder, 'json'):
-            if folder != 'Aous' and folder != 'Damien' and folder != 'Esteban' and folder != 'Guillaume':
+            if folder == 'Right-Handed' or folder == 'Sebastien' or folder == 'Vincent' or folder == 'Yann':
                 print(f'Processing {folder}: {json_file}')
                 k_means_second_pass_all_data(r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed',
                                              r'C:/Users/quentin/Documents/These/Databases/Res/all_ss_05/' + folder + '/',
@@ -827,7 +850,7 @@ def main_second_pass_all_data():
                                              folder)
 
 if __name__ == '__main__':
-    # #main_all_joints()
+    main_all_joints()
     # original_data = json_import(r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/', 'TEST_VIS')
 
     # data_to_select = [['Norm'], ['NewThrowNorm']]
@@ -840,7 +863,7 @@ if __name__ == '__main__':
     # features2 = data_selection(selected_data, data_to_select[1])
     # simple_plot_2d_2_curves(features1, features2)
     # #plot_speed(r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/', 'TEST_VIS', 'LeftHand')
-    
+
     # main_second_pass()
 
-    main_second_pass_all_data()
+    # main_second_pass_all_data()
