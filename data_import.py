@@ -9,103 +9,6 @@ from tools import file_name_gathering, natural_keys, merge_dict
 from motion_classes.motion import *
 
 
-def data_gathering_dict(folder_path, joints_to_append=None):
-    """
-        Put the data from multiples files (in the folder folder_path) into a dictionnary.
-        Each key is associated with a set of values.
-        joints_to_append is there if you want only certains joints.
-        Ex : {"Head":[0.25,0,1.25], "Neck":[0.15,0.10,0.75]}
-    """
-    file_list = file_name_gathering(folder_path)
-
-    # Oh my god I'm so ashamed it took me so long to find this ...
-    # Sort the files into natural order (instead of string order)
-    file_list.sort(key=natural_keys)
-
-    data = OrderedDict()
-
-    # For each file in the folder
-    for filename in file_list:
-
-        # Open the file
-        with open(folder_path+'/'+filename, 'r') as file_data:
-            text = file_data.read()
-
-            # For each line
-            for line in enumerate(text.split('\n')):
-                splitted_line = line[1].split(',')
-
-                # if there's actually something (IF not_empty AND first_value AND second_value)
-                if splitted_line and splitted_line[0] and splitted_line[1]:
-
-                    # If there's no joints_to_append parameter, then do it all time
-                    # If there's a joints_to_append AND the name of the joint is in joints_to_append, do it
-                    if (not joints_to_append) or (joints_to_append and splitted_line[0] in joints_to_append):
-                        # setdefault() append to they value if the key exists, else it adds the key and append
-                        data.setdefault(splitted_line[0], []).append(float(splitted_line[1]))
-                    
-    return data
-
-
-def data_gathering_full(folder_path, joints_to_append=None):
-
-    full_data = []
-
-    for folder in return_files(folder_path):
-        
-        motion_data = []
-        
-        for subfolders in return_files(folder_path + '/' + folder, '.json', False):
-            print(folder_path + '/' + folder + '/' + subfolders)
-            full_data.append(data_gathering_dict(folder_path + '/' + folder + '/' + subfolders))
-
-    return full_data
-    
-
-def adhoc_gathering(folder_path, joints_to_append=None):
-    full_data = []
-
-    for folder in return_files(folder_path):
-        
-        motion_data = []
-        tmp_data = []
-
-        for subfolders in return_files(folder_path + '/' + folder, '.json', False):
-            tmp_data.append(data_gathering_dict(folder_path + '/' + folder + '/' + subfolders, joints_to_append))
-
-        tmp_data = merge_dict(tmp_data)
-        full_data.append(tmp_data)
-
-    return full_data
-
-def file_gathering_dict(file_path, joints_to_append=None):
-    """
-        returns an ordered dict (joint name, value)
-        from a .csv file
-    """
-    data = OrderedDict()
-
-    # Open the file
-    with open(file_path, 'r') as file_data:
-        text = file_data.read()
-
-        # For each line
-        for line in enumerate(text.split('\n')):
-            splitted_line = line[1].split(',')
-
-            # if there's actually something (IF not_empty AND first_value AND second_value)
-            if splitted_line and splitted_line[0] and splitted_line[1]:
-
-                # If there's no joints_to_append parameter, then do it all time
-                # If there's a joints_to_append AND the name of the joint is in joints_to_append, do it
-                if (not joints_to_append) or (joints_to_append and splitted_line[0] in joints_to_append):
-                    # setdefault() append to they value if the key exists, else it adds the key and append
-                    data.setdefault(splitted_line[0], []).append(float(splitted_line[1]))
-                    
-
-    return data
-
-
 def return_files(f, str_to_check=[''], present=True):
     """
         returns a list of files in a folder
@@ -238,9 +141,5 @@ def json_specific_import(folder_path, file_list):
 
 
 if __name__ == '__main__':
-    # data = return_data(r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Test_Python')
-    # data = return_data_with_names(r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Test_Python')
-    # data = data_gathering_dict(r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Speed\Damien_1_Char00_SEGMENTED_TEEEEEEEEEST\NB_SEG_2')
-    # data = data_gathering_full(r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Test_Python')
     data = adhoc_gathering(r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Test_Python')
     pdb.set_trace()
