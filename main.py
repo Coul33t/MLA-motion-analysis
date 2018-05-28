@@ -264,8 +264,6 @@ def test_full_batch_k_var(path, import_find, validate_data=False,
 
     results = Results()
 
-    pdb.set_trace()
-
     # For each k value (2 - 10)
     for k in range(2, 11):
         print('Running for k = {}'.format(k))
@@ -379,7 +377,7 @@ def test_full_batch_k_var(path, import_find, validate_data=False,
 
 
     data_to_export = 'all'
-    data_to_export = results.get_res(ss=[0.5, 'supeq'])
+    # data_to_export = results.get_res(ars=[0.1, 'supeq'])
 
     # Exporting the data
     results.export_data(path=path_to_export,
@@ -667,21 +665,15 @@ def k_means_second_pass_all_data(file_path, result_path, file_name, person_name)
 
                     # We select the data we want and we put them in the right shape
                     # for the algorithm [sample1[f1, f2, ...], sample2[f1, f2, f3...], ...]
-                    try:
-                        features = data_selection(selected_data, data_to_select)
-                    except TypeError:
-                        pdb.set_trace()
+                    features = data_selection(selected_data, data_to_select)
 
                     # Actual k-means
                     res = kmeans_algo(features, k=k)
 
                     # Computing metrics
                     metrics = {}
-                    try:
-                        metrics['ss'] = silhouette_score_computing(features, res.labels_)
-                        metrics['ch'] = calinski_harabaz_score_computing(features, res.labels_)
-                    except ValueError:
-                        pdb.set_trace()
+                    metrics['ss'] = silhouette_score_computing(features, res.labels_)
+                    metrics['ch'] = calinski_harabaz_score_computing(features, res.labels_)
 
                     # Computing the inertia for each cluster
                     clusters_inertia = per_cluster_inertia(features, res.cluster_centers_, res.labels_)
@@ -816,7 +808,7 @@ def main_all_joints():
                 joint_list = left_joints_list
 
             print(f'\n\n\nProcessing {name}...')
-            test_full_batch_k_var(r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/',
+            test_full_batch_k_var(r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/Throw_ball/',
                                   [name],
                                   validate_data=False,
                                   joint_to_use=joint_list,
