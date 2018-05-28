@@ -153,19 +153,19 @@ def dtw_compute(data):
 
 def main_fastdtw_compute():
     original_data = []
-    original_data = json_import(r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/Bottle_Flip_Challenge/good_last_use_this_one/', 'Guillaume')
+    original_data = json_import(r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/Throw_ball/', 'Leo')
 
     if not original_data:
         print('ERROR: no data found (check your names).')
 
-    data_to_select = ['SpeedNorm']
+    data_to_select = [['AccNorm']]
     # If there's no specific datatype defined, we take all the data available
     if not data_to_select:
         data_to_select = set([name for motion in original_data for name in motion.datatypes])
 
     print('\nData used: {}'.format(data_to_select))
 
-    joint_to_use = ['LeftHand']
+    joint_to_use = ['RightHand']
     # If there's no joint to select, then we take all of them
     if joint_to_use is None:
         joint_to_use = original_data[0].get_joint_list()
@@ -185,29 +185,35 @@ def main_fastdtw_compute():
             if isinstance(joint, list):
                 joint_name = ','.join(joint)
 
+
             # We keep the joints' data we're interested in (from the motion class)
             selected_data = joint_selection(original_data, joint)
 
             # We select the data we want and we put them in the right shape
             # for the algorithm [sample1[f1, f2, ...], sample2[f1, f2, f3...], ...]
-            features = data_selection(selected_data, data_to_select)
+            features = data_selection(selected_data, data)
 
             # If we only work with the succesful motions,
             # we only keep these ones (c == 1 for success)
             mat = dtw_compute(list(features))
 
-    f_o = open("LeftHand_SpeedNorm_Guillaume_fastdtw_matrix.txt", "w")
-    for line in mat:
-        for val in line:
-            if val == None:
-                f_o.write('- ')
-            else:
-                f_o.write(str(float(val)) + ' ')
-        f_o.write('\n')
-    f_o.close()
+            if isinstance(joint, list):
+                joint = '_'.join(joint)
+            if isinstance(data, list):
+                data = '_'.join(data)
 
-def main_regroup():
-    f_o = open("LeftHand_SpeedNorm_Guillaume_fastdtw_matrix.txt", "r")
+            f_o = open(joint + '_' + data + "_Leo_fastdtw_matrix.txt", "w")
+            for line in mat:
+                for val in line:
+                    if val == None:
+                        f_o.write('- ')
+                    else:
+                        f_o.write(str(float(val)) + ' ')
+                f_o.write('\n')
+            f_o.close()
+
+def main_regroup(verbose=False):
+    f_o = open("RightHand_AccNorm_Leo_fastdtw_matrix.txt", "r")
     txt = f_o.read()
     mat = []
     for i,line in enumerate(txt.split('\n')):
@@ -221,7 +227,7 @@ def main_regroup():
 
 
 
-    success = dl.GLOUP_LABELS_2
+    success = dl.LEO_THROW_TYPES
     idx_succ = [i for i, l in enumerate(success) if l == 1]
     idx_fail = [i for i, l in enumerate(success) if l == 0]
 
@@ -263,8 +269,9 @@ def main_regroup():
                 else:
                     dst.append(mat[idx][i])
             fail_dst_other = np.mean(dst)
-            print(f'Mean distance sample {i} (failed) from other: {np.mean(dst)}')
-            print('---------------------------------------------------------------------')
+            if verbose:
+                print(f'Mean distance sample {i} (failed) from other: {np.mean(dst)}')
+                print('---------------------------------------------------------------------')
 
         # If it's a success, we compare it to the fails
         elif success[i] == 1:
@@ -275,8 +282,9 @@ def main_regroup():
                 else:
                     dst.append(mat[idx][i])
             succ_dst_other = np.mean(dst)
-            print(f'Mean distance sample {i} (success) from other: {np.mean(dst)}')
-            print('---------------------------------------------------------------------')
+            if verbose:
+                print(f'Mean distance sample {i} (success) from other: {np.mean(dst)}')
+                print('---------------------------------------------------------------------')
 
     print('---------------------------------------------------------------------')
     print(f'Mean distance from success to other: {np.mean(succ_dst_other)}')
