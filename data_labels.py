@@ -64,6 +64,7 @@ MOVE_SUCCESS = [x for x in range(1, 11)]
 THROW_SUCCESS = [x for x in range(1, 11)]
 SQUARE_SUCCESS = [x for x in range(1, 11)]
 
+# Success or fail
 LEO_LABELS_2 = [0, 1, 0, 1, 1, 1, 1, 0, 1, 0,
                 1, 1, 0, 1, 0, 0, 1, 1, 1, 1,
                 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
