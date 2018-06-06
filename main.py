@@ -187,7 +187,7 @@ def compute_mean_std(d_m, success_indexes, natural_indexes=False):
             np.std(cutted_failure_distance_matrix)]
 
 
-def test_full_batch_k_var(path, import_find, validate_data=False,
+def test_full_batch_k_var(path, original_data, name, validate_data=False,
                           joint_to_use=None, data_to_select=None,
                           true_labels=None, verbose=False, to_file=True,
                           to_json=True, display_graph=False,
@@ -205,21 +205,6 @@ def test_full_batch_k_var(path, import_find, validate_data=False,
 
     if (display_graph or save_graph) and not data_to_graph:
         print('ERROR: no data specified for graph output.')
-        return
-
-    original_data = []
-
-    # Gathering the data
-    # If it's a list, then we have to import multiple people's data
-    if isinstance(import_find[0], list):
-        for to_import in import_find[0]:
-            original_data.extend(json_import(path, to_import))
-    # Else, it's just a name, so we import their data
-    else:
-        original_data = json_import(path, import_find)
-
-    if not original_data:
-        print('ERROR: no data found (check your names).')
         return
 
     if validate_data:
@@ -372,7 +357,7 @@ def test_full_batch_k_var(path, import_find, validate_data=False,
 
     path_to_export = ''
     # If the length of the folder is too long, we shorten it
-    folder_name = string_length_shortening(import_find[0], max_size=50)
+    folder_name = string_length_shortening(name, max_size=50)
     path_to_export = r'C:/Users/quentin/Documents/Programmation/Python/ml_mla/test_export_class/' + folder_name +'/'
 
 
@@ -758,7 +743,23 @@ def k_means_second_pass_all_data(file_path, result_path, file_name, person_name)
                                               path=path_to_export, graph_title=plot_save_name.replace('_', ' '),
                                               x_label='k value', y_label=data_to_graph)
 
+def import_data(path, import_find):
+    original_data = []
 
+    # Gathering the data
+    # If it's a list, then we have to import multiple people's data
+    if isinstance(import_find[0], list):
+        for to_import in import_find[0]:
+            original_data.extend(json_import(path, to_import))
+    # Else, it's just a name, so we import their data
+    else:
+        original_data = json_import(path, import_find)
+
+    if not original_data:
+        print('ERROR: no data found (check your names).')
+        return
+
+    return original_data
 
 def main():
     # test_full_batch(r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/', joints_to_append=['Hips'])
@@ -800,15 +801,22 @@ def main_all_joints():
 
     people_names = [['Leo', 'right']]
 
-    for people in people_names:
-        for data_to_select in data_types_combination:
-            name = people[0]
-            joint_list = right_joints_list
-            if people[1] == 'left':
-                joint_list = left_joints_list
+    path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/Throw_ball/'
 
+    for people in people_names:
+
+        name = people[0]
+        joint_list = right_joints_list
+
+        if people[1] == 'left':
+            joint_list = left_joints_list
+
+        original_data = import_data(path, [name])
+
+        for data_to_select in data_types_combination:
             print(f'\n\n\nProcessing {name}...')
-            test_full_batch_k_var(r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/Throw_ball/',
+            test_full_batch_k_var(path,
+                                  original_data,
                                   [name],
                                   validate_data=False,
                                   joint_to_use=joint_list,
