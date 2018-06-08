@@ -48,6 +48,14 @@ import data_labels as dl
 # Constants (well more like " huge lists " but whatever)
 import constants as cst
 
+def select_one_class(original_data, labels, c_to_keep):
+    new_original_data = []
+
+    for i, motion in enumerate(original_data):
+        if labels[i] == c_to_keep:
+            new_original_data.append(motion)
+
+    return new_original_data
 
 def joint_selection(data, joints_to_append):
     """
@@ -447,8 +455,9 @@ def clusters_composition_name(labels, sample_nb, original_names, verbose=False):
 def plot_speed(path, file, joint_to_use):
     original_data = json_import(path, file)
 
-    data_to_select = ['Speed']
+    data_to_select = ['SpeedNorm']
 
+    pdb.set_trace()
     # We keep the data we're interested in (from the .json file)
     selected_data = joint_selection(original_data, joint_to_use)
 
@@ -830,6 +839,35 @@ def main_all_joints():
                                   data_to_graph='ss',
                                   only_success=False)
 
+def main_leo():
+    data_types_combination = cst.data_types_combination
+
+    path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/Throw_ball/'
+
+    name = 'Leo'
+    joint_list =  cst.right_joints_list
+
+    original_data = import_data(path, [name])
+    original_data = select_one_class(original_data, dl.LEO_THROW_LABELS, 1)
+    labels = dl.LEO_LABELS_2[50:]
+
+    for data_to_select in data_types_combination:
+        print(f'\n\n\nProcessing {name}...')
+        test_full_batch_k_var(path,
+                              original_data,
+                              [name],
+                              validate_data=False,
+                              joint_to_use=joint_list,
+                              data_to_select=data_to_select,
+                              true_labels=labels,
+                              verbose=False,
+                              to_file=True,
+                              to_json=True,
+                              display_graph=False,
+                              save_graph=True,
+                              data_to_graph='ars',
+                              only_success=False)
+
 def main_second_pass():
     for folder in return_files(r'C:/Users/quentin/Documents/These/Databases/Res/all_ss_05/'):
         for json_file in return_files(r'C:/Users/quentin/Documents/These/Databases/Res/all_ss_05/' + folder, 'json'):
@@ -850,7 +888,8 @@ def main_second_pass_all_data():
                                              folder)
 
 if __name__ == '__main__':
-    main_all_joints()
+    # main_all_joints()
+    # main_leo()
     # original_data = json_import(r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/', 'TEST_VIS')
 
     # data_to_select = [['Norm'], ['NewThrowNorm']]
@@ -862,7 +901,7 @@ if __name__ == '__main__':
     # features1 = data_selection(selected_data, data_to_select[0])
     # features2 = data_selection(selected_data, data_to_select[1])
     # simple_plot_2d_2_curves(features1, features2)
-    # #plot_speed(r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/', 'TEST_VIS', 'LeftHand')
+    plot_speed(r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/LALALASEB/', 'Sebastien_37Char00', 'RightHand')
 
     # main_second_pass()
 
