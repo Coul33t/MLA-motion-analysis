@@ -34,7 +34,7 @@ def visualization(motion_type="gimbal", joints_to_visualize=None, savgol=False):
 
 
     y = []
-    
+
     if joints_to_visualize:
         for joint in joints_to_visualize:
             y.append((joint, data_lin.get(joint)))
@@ -55,13 +55,13 @@ def visualization(motion_type="gimbal", joints_to_visualize=None, savgol=False):
     for i, (joint_name, values) in enumerate(y):
         my_color = next(color)
         print(joint_name)
-        
+
         if savgol:
             print(savgol_coeffs(21, 3))
             values = savgol_filter(values, 21, 3)
-            
+
         ls.plot(x, values, color=my_color, label=joint_name)
-   
+
     plt.show()
 
 
@@ -69,7 +69,7 @@ def multifiles_visualization(motion_type="gimbal", joints_to_visualize=None, sav
     folder = r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Speed'
 
     data_lin = []
-    
+
     subdirectories = os.listdir(folder)
     subdirectories.sort(key=natural_keys)
 
@@ -100,7 +100,7 @@ def multifiles_visualization(motion_type="gimbal", joints_to_visualize=None, sav
     for i in range(len(data)):
         c=next(color)
         x = np.linspace(0, len(data[i]), len(data[i]), endpoint=False)
-        
+
         if savgol:
             ls.plot(x, savgol_filter(data[i], 51, 3), linestyle='solid', color=c)
         else:
@@ -110,12 +110,12 @@ def multifiles_visualization(motion_type="gimbal", joints_to_visualize=None, sav
 
 
 def plot_2d(data, true_class, clu_class, label1='NONE_1'):
-    
+
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
     for i,point in enumerate(data):
-        
+
         # class 0, OK
         if clu_class[i] == 0 and true_class[i] == 0:
             ax.plot(point[0], point[1], 'x', color='green')
@@ -134,18 +134,18 @@ def plot_2d(data, true_class, clu_class, label1='NONE_1'):
     orange_patch = mpatches.Patch(color='orange', label='missclassed as class 0')
     red_patch = mpatches.Patch(color='red', label='missclassed as class 1')
     plt.legend(handles=[green_patch, blue_patch, orange_patch, red_patch])
-    ax.set_title(label1)      
-   
+    ax.set_title(label1)
+
     plt.show()
 
 def plot_2d_dual(data, true_class, clu_class, label1='NONE_1', label2='NONE_2'):
-    
+
     fig = plt.figure()
     ax = fig.add_subplot(121)
     ax2 = fig.add_subplot(122)
 
     for i,point in enumerate(data):
-        
+
         if clu_class[i] == 0:
             ax.plot(point[0], point[1], 'x', color='red')
         else:
@@ -157,8 +157,8 @@ def plot_2d_dual(data, true_class, clu_class, label1='NONE_1', label2='NONE_2'):
             ax2.plot(point[0], point[1], 'x', color='blue')
 
     ax.set_title(label1)
-    ax2.set_title(label2)        
-   
+    ax2.set_title(label2)
+
     plt.show()
 
 #TODO: add a red thing at the best value (depending on the computed score)
@@ -259,7 +259,7 @@ def plot_data_k_means_PCA(data, labels):
 
 
 def plot_res(res_data, metrics='all', save=False, name='foo'):
-    
+
 
     fig = plt.figure()
 
@@ -279,7 +279,7 @@ def plot_res(res_data, metrics='all', save=False, name='foo'):
 
     # For each desired metric plot
     for i,m in enumerate(metrics):
-        
+
         joint_combination = set()
 
         for res in res_data.results_list:
@@ -302,17 +302,17 @@ def plot_res(res_data, metrics='all', save=False, name='foo'):
             plt.savefig(name + '.png')
         else:
             plt.show()
-        
+
 
 
 def simple_plot_2d(data, axis_lim=None):
     data = np.asarray(data)
-    
+
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
     x = np.linspace(0, data.shape[0]-1, data.shape[0])
-    
+
     ax.set_xlabel('Frame')
     ax.set_ylabel('Linear speed (m/s)')
 
@@ -329,20 +329,22 @@ def simple_plot_2d_2_curves(data1, data2):
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
+    try:
+        len_total = max(data1.shape[1], data2.shape[1])
+        idx_shape = 1
+    except IndexError:
+        len_total = max(data1.shape[0], data2.shape[0])
+        idx_shape = 0
 
-    len_total = max(data1.shape[1], data2.shape[1])
     x = np.linspace(0, len_total-1, len_total)
     ax.set_xlabel('Frame')
     ax.set_ylabel('Linear speed (m/s)')
-    
-    if data1.shape[1] > data2.shape[1]:
-        data2 = np.concatenate((data2[0], np.asarray([None for x in range(data1.shape[1] - data2.shape[1])])))
-        data1 = data1[0]
-    else:
-        data1 = np.concatenate((data1[0], np.asarray([None for x in range(data2.shape[1] - data1.shape[1])])))
-        data2 = data2[0]
 
-    pdb.set_trace()
+    if data1.shape[idx_shape] > data2.shape[idx_shape]:
+        data2 = np.concatenate((data2, np.asarray([None for x in range(data1.shape[idx_shape] - data2.shape[idx_shape])])))
+    else:
+        data1 = np.concatenate((data1, np.asarray([None for x in range(data2.shape[idx_shape] - data1.shape[idx_shape])])))
+
     ax.plot(x, data1, color='blue')
     ax.plot(x, data2, color='red')
 
@@ -355,7 +357,7 @@ def test():
 
     for dic in data_lin:
         mean_len.append(len(dic.get('RightForeArm')))
-    
+
     mean_len = int(sum(mean_len)/len(mean_len))
 
     # 10 because artefact in the 10th first frames (approximately)
@@ -377,7 +379,7 @@ def test():
 
     for i,row in enumerate(corr_mat):
         for j,signal in enumerate(row):
-            corr_mat[i][j] = corr_mat[i][j]*factor    
+            corr_mat[i][j] = corr_mat[i][j]*factor
 
     print('TEST : {}'.format(np.argmax(correlate(data[1], data[1]))))
     pdb.set_trace()
@@ -386,15 +388,32 @@ def test():
 if __name__ == '__main__':
 
     from data_import import json_import
-    path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed'
-    yo = json_import(path, 'TEST_VIS')
+    path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/LALALAOUS/'
+    yo = json_import(path, 'Aous_100Char00')
     yo = yo[0]
 
-    norm = yo.get_datatype('Norm')
-    nnorm = yo.get_datatype('SavgoledNorm')
-    snorm = yo.get_datatype('NewThrowNorm')
-    normv = norm.get_joint('LeftHand')
-    nnormv = nnorm.get_joint('LeftHand')
-    snormv = snorm.get_joint('LeftHand')
+    path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/Bottle_Flip_Challenge/good_last_use_this_one_not_sure/'
+    ya = json_import(path, 'Aous_100Char00')
+    ya = ya[0]
 
-    pdb.set_trace()   
+    normo = yo.get_datatype('SpeedNorm')
+    normov = normo.get_joint('LeftHand')
+
+    norma = ya.get_datatype('SpeedNorm')
+    normav = norma.get_joint('LeftHand')
+
+    pdb.set_trace()
+    simple_plot_2d_2_curves(normov, normav)
+    # from data_import import json_import
+    # path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed'
+    # yo = json_import(path, 'TEST_VIS')
+    # yo = yo[0]
+
+    # norm = yo.get_datatype('Norm')
+    # nnorm = yo.get_datatype('SavgoledNorm')
+    # snorm = yo.get_datatype('NewThrowNorm')
+    # normv = norm.get_joint('LeftHand')
+    # nnormv = nnorm.get_joint('LeftHand')
+    # snormv = snorm.get_joint('LeftHand')
+
+    # pdb.set_trace()
