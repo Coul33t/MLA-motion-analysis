@@ -10,9 +10,10 @@ from data_import import json_import
 from main import (joint_selection,
                   data_selection)
 
-from algos.kmeans_algo import (kmeans_algo,
-                               adjusted_rand_score_computing,
-                               silhouette_score_computing)
+from algos.kmeans_algo import kmeans_algo
+
+from algos.metrics import (adjusted_rand_score_computing,
+                           silhouette_score_computing)
 
 import data_labels as dl
 
@@ -72,6 +73,14 @@ def compute_clusters(labels, gt):
 
     return [c1_together, c2_together]
 
+def graph_analysis(g):
+    best_nodes = []
+
+    for n in g.vs:
+        if n['best'] == True:
+            best_nodes.append(n)
+
+    pdb.set_trace()
 
 def init(c_to_keep=False, debug=False):
     """
@@ -119,7 +128,7 @@ def init(c_to_keep=False, debug=False):
     igraph.plot(i_graph, "output_graph_large.svg", layout=i_graph.layout('large_graph'), vertex_size=5, bbox=bbox)
     igraph.plot(i_graph, "output_graph_circular.svg", layout=i_graph.layout('rt_circular'), vertex_size=5, bbox=bbox)
     i_graph.save("output.gml", format="gml")
-    i_graph.save("output.gml", format="graphml")
+    i_graph.save("output.graphml", format="graphml")
 
     if debug:
         print(f'Iterations: {ITERATION_COUNTER}')
@@ -133,7 +142,7 @@ def init_test_stop(c_to_keep=False, debug=False):
     original_data = []
     original_data = json_import(r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/Throw_ball/', 'Leo')
     datatypes_used = [['BegMaxEndSpeedNorm'], ['BegMaxEndSpeedx', 'BegMaxEndSpeedy', 'BegMaxEndSpeedz'], ['BegMaxEndSpeedNorm', 'BegMaxEndSpeedDirx', 'BegMaxEndSpeedDiry', 'BegMaxEndSpeedDirz']]
-    datatypes_used = [['BegMaxEndSpeedNorm'], ['BegMaxEndSpeedx', 'BegMaxEndSpeedy', 'BegMaxEndSpeedz']]
+    datatypes_used = [['BegMaxEndSpeedNorm'], ['BegMaxEndSpeedx', 'BegMaxEndSpeedy', 'BegMaxEndSpeedz'], ['BegMaxEndSpeedNorm', 'BegMaxEndSpeedDirx', 'BegMaxEndSpeedDiry', 'BegMaxEndSpeedDirz']]
     joints = [['RightHand']]
 
     original_data_classes = motion_classes(original_data, dl.LEO_LABELS_2)
@@ -151,26 +160,31 @@ def init_test_stop(c_to_keep=False, debug=False):
     p_id = [0]
     recursive_clustering_test_stop(original_data, original_data_classes, 'all', datatypes_used, joints, i_graph, p_id, debug=debug)
 
+    graph_analysis(i_graph)
+
     # Assigning colours to the vertices (dict is pretty self-explanatory)
     color_dict = {'black': [0, 0.25], 'red':[0.25, 0.5], 'orange': [0.5, 0.75], 'green': [0.75, 1]}
     for i,vertex in enumerate(i_graph.vs):
         # vertex['label'] = i
-        if vertex['ss'] == 1:
-            vertex['color'] = 'blue'
         if vertex['best']:
             vertex['shape'] = 'rectangle'
+
+        if vertex['ss'] == 1:
+            vertex['color'] = 'blue'
         else:
             for k, v in color_dict.items():
                 if v[0] <= max(vertex['c_together']) < v[1]:
                     vertex['color'] = k
-                    print(f'{max(vertex["c_together"])}: color {k}')
 
     bbox = (1000, 1000)
     igraph.plot(i_graph, "output_graph_tree.svg", layout=i_graph.layout('tree'), vertex_size=5, bbox=bbox)
     igraph.plot(i_graph, "output_graph_large.svg", layout=i_graph.layout('large_graph'), vertex_size=5, bbox=bbox)
     igraph.plot(i_graph, "output_graph_circular.svg", layout=i_graph.layout('rt_circular'), vertex_size=5, bbox=bbox)
+
+    pdb.set_trace()
+
     i_graph.save("output.gml", format="gml")
-    i_graph.save("output.gml", format="graphml")
+    i_graph.save("output.graphml", format="graphml")
 
     if debug:
         print(f'Iterations: {ITERATION_COUNTER}')
@@ -235,11 +249,15 @@ def recursive_clustering(original_data, data_to_keep, datatype_used, joints, i_g
                 value['data'] = data
                 value['joint'] = joint
                 value['ss'] = s_score
+
+                if k == 2:
+                    value['ars'] = adjusted_rand_score_computing(res.labels_, sub_classes)
                 # We get the indexes of motion in every clusters
                 for c in range(len(np.unique(res.labels_))):
                     idx_c.append(np.where(res.labels_ == c)[0].tolist())
+
                 for i,rep in enumerate(idx_c):
-                    value[f'c{i}'] = [x.name for i, x in enumerate(original_data) if i in idx_c[0]]
+                    value[f'c{i}'] = [x.name for j, x in enumerate(original_data) if j in idx_c[i]]
 
                 i_graph.add_vertex(**value)
                 i_graph.add_edge(p_id[-1], len(i_graph.vs) - 1)
@@ -346,11 +364,15 @@ def recursive_clustering_test_stop(original_data, original_data_classes, data_to
                 value['data'] = data
                 value['joint'] = joint
                 value['ss'] = s_score
+                if k == 2:
+                    value['ars'] = adjusted_rand_score_computing(res.labels_, [x[1] for x in sub_classes])
+
                 # We get the indexes of motion in every clusters
                 for c in range(len(np.unique(res.labels_))):
                     idx_c.append(np.where(res.labels_ == c)[0].tolist())
+
                 for i,rep in enumerate(idx_c):
-                    value[f'c{i}'] = [x.name for i, x in enumerate(original_data) if i in idx_c[0]]
+                    value[f'c{i}'] = [x.name for j, x in enumerate(original_data) if j in idx_c[i]]
 
                 clustering_res = {}
                 clustering_res['k'] = k
@@ -375,6 +397,7 @@ def recursive_clustering_test_stop(original_data, original_data_classes, data_to
                     best_c_together[1] = k - 2
 
                 i_graph.add_vertex(**value)
+
                 i_graph.add_edge(p_id[-1], len(i_graph.vs) - 1)
                 if debug:
                     print(f'Link {p_id[-1]} and {len(i_graph.vs) - 1}')
