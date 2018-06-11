@@ -27,12 +27,13 @@ from data_import import (return_files,
 
 # Clustering algorithms and metrics computing
 from algos.kmeans_algo import (kmeans_algo,
-                               per_cluster_inertia,
-                               f_score_computing,
-                               adjusted_mutual_info_score_computing,
-                               adjusted_rand_score_computing,
-                               silhouette_score_computing,
-                               calinski_harabaz_score_computing)
+                               per_cluster_inertia)
+
+from algos.metrics import (f_score_computing,
+                           adjusted_mutual_info_score_computing,
+                           adjusted_rand_score_computing,
+                           silhouette_score_computing,
+                           calinski_harabaz_score_computing)
 
 # Data visualization functions
 from data_visualization import (plot_data_k_means,
