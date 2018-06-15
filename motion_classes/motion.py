@@ -11,6 +11,8 @@ class Motion():
         # Dic str: Datatype()
         self.datatypes = {}
 
+        self.laterality = 'Ambidextrous'
+
     def add_datatype(self, name, data):
         datatype = Datatype(name)
         datatype.joints = data
@@ -51,7 +53,7 @@ class Motion():
         for joint in sorted_joint_list:
             # For every datatype
             for datatype in self.datatypes:
-                
+
                 datatype_joint_list = []
                 # For every joints in the datatype
                 for joint_datatype in self.datatypes[datatype].joints:
