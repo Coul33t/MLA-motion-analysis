@@ -33,7 +33,9 @@ from algos.metrics import (f_score_computing,
                            adjusted_mutual_info_score_computing,
                            adjusted_rand_score_computing,
                            silhouette_score_computing,
-                           calinski_harabaz_score_computing)
+                           calinski_harabaz_score_computing,
+                           compute_all_clustering_metrics,
+                           compute_all_gt_metrics)
 
 # Data visualization functions
 from data_visualization import (plot_data_k_means,
@@ -90,9 +92,17 @@ def joint_selection(data, joints_to_append):
             # For each joint to append
             if isinstance(joints_to_append, list):
                 for joint in joints_to_append:
+                    if joint not in motion.get_joint_list():
+                        joint = motion.laterality + joint
+
+
                     joints_selected[joint] = motion.get_datatype(datatype).get_joint_values(joint)
 
+
             else:
+                if joints_to_append not in motion.get_joint_list():
+                    joints_to_append = motion.laterality + joints_to_append
+
                 joints_selected[joints_to_append] = motion.get_datatype(datatype).get_joint_values(joints_to_append)
 
             selected_joints_motion[1][datatype] = joints_selected
@@ -119,7 +129,7 @@ def data_selection(data, data_to_keep):
         # For each data type we want to gather
         for datatype in data_to_keep:
 
-            # Don't ask how it works (= nb_frames - 1 for speed)
+            # Don't ask how it works (= nb_frames)
             nb_values = len(list(motion[1][datatype].values())[0])
 
             for i in range(nb_values):
@@ -195,6 +205,143 @@ def compute_mean_std(d_m, success_indexes, natural_indexes=False):
             np.mean(cutted_failure_distance_matrix),
             np.std(cutted_failure_distance_matrix)]
 
+def k_mean_mixed(path, original_data, name, validate_data=False,
+                          joint_to_use=None, data_to_select=None,
+                          true_labels=None, verbose=False, to_file=True,
+                          to_json=True, display_graph=False,
+                          save_graph=False, data_to_graph=None):
+    """
+        This function run a k-means algorithm with varying k values,
+        on each joint.
+    """
+
+    if (display_graph or save_graph) and not data_to_graph:
+        print('ERROR: no data specified for graph output.')
+        return
+
+    if validate_data:
+        for motion in original_data:
+            motion.validate_motion()
+
+    # If there's no specific datatype defined, we take all the data available
+    if not data_to_select:
+        data_to_select = set([name for motion in original_data for name in motion.datatypes])
+
+    print('\nData used: {}'.format(data_to_select))
+
+    # If there's no joint to select, then we take all of them
+    if joint_to_use is None:
+        joint_to_use = original_data[0].get_joint_list()
+
+    print('Joints used: {}\n'.format(joint_to_use))
+
+    # This OrderedDict will contain each joint as a key, and for each
+    # joint, a list of list, [nb_cluster, inertia]
+    res_k = OrderedDict()
+
+    results = Results()
+
+    for k in range(2, 11):
+        print('Running for k = {}'.format(k))
+
+        # For each joint combination
+        for joint in joint_to_use:
+            joint_name = joint
+
+            if isinstance(joint, list):
+                joint_name = ','.join(joint)
+
+            # We keep the joints' data we're interested in
+            # (from the motion class)
+            selected_data = joint_selection(original_data, joint)
+
+            # We select the data we want and we put them in the right shape
+            # for the algorithm
+            # [sample1[f1, f2, ...], sample2[f1, f2, f3...], ...]
+            features = data_selection(selected_data, data_to_select)
+
+            # Actual k-means
+            res = kmeans_algo(features, k=k)
+
+            metrics = {}
+            # Computing the f1-score, adjusted mutual information score
+            # and adjusted rand score, if the number of clusters correspond
+            # to the number of clusters in the ground truth
+            # If we're working only with the success, we have no ground truth
+            # so we can't ompute these scores
+            if true_labels and k == len(np.unique(true_labels)):
+                metrics.update(compute_all_gt_metrics(res.labels_, true_labels))
+
+            metrics.update(compute_all_clustering_metrics(features, res.labels_))
+
+            if verbose:
+                print('Joint: {}'.format(joint))
+                print("Global inertia: {}".format(res.inertia_))
+                clusters_composition(res.labels_, true_labels, len(original_data), verbose=True)
+
+            # Computing the inertia for each cluster
+            clusters_inertia = per_cluster_inertia(features, res.cluster_centers_, res.labels_)
+
+            # If we have the true labels (currently only works for c = 2 since
+            # I don't know how to test every permutation possible)
+            if true_labels and len(set(true_labels)) == 2:
+                c_comp = clusters_composition(res.labels_, true_labels, len(original_data), verbose=False)
+            else:
+                c_comp = clusters_composition_name(res.labels_, len(original_data),
+                                                   original_names=np.asarray([o.name for o in original_data]),
+                                                   verbose=False)
+
+            # Appending the value for the current k to the results OrderedDict
+            # (used for graph)
+            if data_to_graph and data_to_graph in metrics.keys():
+                res_k.setdefault(joint_name, []).append([k, metrics[data_to_graph]])
+
+            # Compute the distance between each centroids for each dimension
+            centroids = np.asarray(res.cluster_centers_)
+            centroids_diff = {}
+            for i in range(len(centroids) - 1):
+                for j in range(i+1, len(centroids)):
+                    centroids_diff[f'c{i}_c{j}'] = abs(centroids[i] - centroids[j]).tolist()
+
+            # Add the current algorithm output to the results
+            results.add_values(k=k, data_used=data_to_select, joints_used=joint, centroids=res.cluster_centers_,
+                               centroids_diff=centroids_diff, global_inertia=res.inertia_,
+                               per_cluster_inertia=clusters_inertia, metrics=metrics, motion_repartition=c_comp)
+
+
+    path_to_export = ''
+    # If the length of the folder is too long, we shorten it
+    folder_name = string_length_shortening(name, max_size=50)
+    path_to_export = r'C:/Users/quentin/Documents/Programmation/Python/ml_mla/test_export_class/' + folder_name +'/'
+
+
+    data_to_export = 'all'
+    # data_to_export = results.get_res(ars=[0.1, 'supeq'])
+
+    # Exporting the data
+    results.export_data(path=path_to_export,
+                        data_to_export=data_to_export,
+                        text_export=to_file,
+                        json_export=to_json)
+
+    # Plotting or saving the desired values
+    if display_graph or save_graph:
+        plot_save_name = ''
+
+        if save_graph:
+            plot_save_name = "_".join(data_to_select)
+
+            if true_labels:
+                plot_save_name += '_c' + str(len(set(true_labels)))
+
+        plot_save_name = string_redundancy_remover(plot_save_name)
+
+        plot_data_k_means(res_k, display=display_graph, save=save_graph,
+                          name=plot_save_name, path=path_to_export,
+                          graph_title=plot_save_name.replace('_', ' '),
+                          x_label='k value', y_label=data_to_graph)
+
+    return results
 
 def test_full_batch_k_var(path, original_data, name, validate_data=False,
                           joint_to_use=None, data_to_select=None,
@@ -771,6 +918,13 @@ def import_data(path, import_find):
 
     return original_data
 
+def set_dominant(list_of_motions):
+    for motion in list_of_motions:
+        if 'Aous' in motion.name or 'Damien' in motion.name:
+            motion.laterality = 'Left'
+        else:
+            motion.laterality = 'Right'
+
 def main():
     # test_full_batch(r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/', joints_to_append=['Hips'])
     # # Python can't lenny face :(
@@ -804,14 +958,14 @@ def main():
 
 def main_all_joints():
 
-    people_names = cst.people_names
+    people_names = cst.people_names_O
     data_types_combination = cst.data_types_combination
     right_joints_list = cst.right_joints_list
     left_joints_list = cst.left_joints_list
 
-    people_names = [['Leo', 'right']]
+    people_names = [[['Esteban', 'Guillaume', 'Ines', 'Iza', 'Ludovic', 'Marc', 'Oussema', 'Pierre', 'Sebastien', 'Vincent', 'Yann'], 'right']]
 
-    path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/Throw_ball/'
+    path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/LALALTESTNEWMAX/'
 
     for people in people_names:
 
@@ -839,6 +993,38 @@ def main_all_joints():
                                   save_graph=True,
                                   data_to_graph='ss',
                                   only_success=False)
+
+def main_all_together():
+    people_names = cst.people_names
+    data_types_combination = cst.data_types_combination
+    joint_list = cst.right_joints_list
+    path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/Bottle_Flip_Challenge/glu/'
+
+    original_data = []
+    labels = []
+
+    for people in people_names:
+
+        name = people[0]
+        if name != 'Aous' and name != 'Damien':
+            print(f'Importing {name} motion data')
+            original_data.extend(import_data(path, [name]))
+            labels.extend(getattr(dl, cst.names_labels[name]))
+
+    pdb.set_trace()
+    print(f'Setting laterality')
+    set_dominant(original_data)
+
+    results = []
+    for data_to_select in data_types_combination:
+        print(f'\n\n\nProcessing all for {data_to_select}')
+        results.append(k_mean_mixed(path, original_data, ['all'], validate_data=False,
+                                    joint_to_use=joint_list, data_to_select=data_to_select,
+                                    true_labels=labels, verbose=False, to_file=True,
+                                    to_json=True, display_graph=False, save_graph=True,
+                                    data_to_graph='ss'))
+
+    pdb.set_trace()
 
 def main_leo():
     data_types_combination = cst.data_types_combination
@@ -888,7 +1074,37 @@ def main_second_pass_all_data():
                                              json_file,
                                              folder)
 
+def test():
+    people_names = cst.people_names
+    data_types_combination = cst.data_types_combination
+    joint_list = cst.right_joints_list
+    path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/Bottle_Flip_Challenge/glu/'
+
+    original_data = []
+    labels = []
+
+    for people in people_names:
+
+        name = people[0]
+
+        print(f'Importing {name} motion data')
+        original_data.extend(import_data(path, [name]))
+        labels.extend(getattr(dl, cst.names_labels[name]))
+
+
+    for i,people in enumerate(people_names):
+        tst = import_data(path, [people[0]])
+        valid = True
+        for j in range(100):
+            if tst[i].get_datatype('BegMaxEndSpeedNorm').get_joint('LeftHand') != original_data[(i*100) + i].get_datatype('BegMaxEndSpeedNorm').get_joint('LeftHand'):
+                valid = False
+                pdb.set_trace()
+
+        print(valid)
+
 if __name__ == '__main__':
+    # test()
+    main_all_together()
     # main_all_joints()
     # main_leo()
     # original_data = json_import(r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/', 'TEST_VIS')
@@ -902,7 +1118,7 @@ if __name__ == '__main__':
     # features1 = data_selection(selected_data, data_to_select[0])
     # features2 = data_selection(selected_data, data_to_select[1])
     # simple_plot_2d_2_curves(features1, features2)
-    plot_speed(r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/LALALASEB/', 'Sebastien_37Char00', 'RightHand')
+    # plot_speed(r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/LALALASEB/', 'Sebastien_37Char00', 'RightHand')
 
     # main_second_pass()
 
