@@ -5,6 +5,8 @@ from collections import OrderedDict
 
 import constants as cst
 
+import pdb
+
 def file_name_gathering(folder_path):
     """
         Collects the file name from folder_path.
@@ -105,27 +107,30 @@ def motion_dict_to_list(data_dict):
 
     return new_list
 
-def string_length_shortening(s, max_size=50):
-    if isinstance(s, list):
-        s = '_'.join(s)
+def string_length_shortening(strg, max_size=50):
 
-    if len(s) > max_size:
-        return ''.join([c for c in s if (c.isupper() or c == '_')])
+    if isinstance(strg, list):
+        strg = '_'.join(strg)
+
+    if len(strg) > max_size:
+        return ''.join([c for c in strg if (c.isupper() or c == '_')])
     else:
-        return s
+        return strg
 
-def string_redundancy_remover(s):
+def string_redundancy_remover(strg):
     for name in cst.data_types_base_name:
 
         # Finding the first occurence of the data type name
-        idx = s.find(name) + 1
+        idx = strg.find(name) + 1
         # Erasing the rest of it
-        s = s[:idx] + s[idx:].replace(name, '_')
+        strg = strg[:idx] + strg[idx:].replace(name, '_')
 
-    return s
+    return strg
 
 
 if __name__ == '__main__':
     s = 'output_BegMaxEndSpeedDirxBegMaxEndSpeedDiryBegMaxEndSpeedDirzBegMaxEndSpeedxBegMaxEndSpeedyBegMaxEndSpeedz'
+    s = ['Esteban', 'Guillaume', 'Ines', 'Iza', 'Ludovic', 'Marc', 'Oussema', 'Pierre', 'Sebastien', 'Vincent', 'Yann']
+    string_length_shortening(s)
     print(string_redundancy_remover(s))
 
