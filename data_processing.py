@@ -372,15 +372,6 @@ def test_full_batch_k_var(path, original_data, name, validate_data=False,
     # joint, a list of list, [nb_cluster, inertia]
     res_k = OrderedDict()
 
-    # 2 sets:
-    # high_interia -> list (set) of joints with inertia >= 50 at any k
-    # low_inertia -> list (set) of joints with inertia < 50 at any k
-    # The intersection of 2 set (at the end of the algorithm) allows us
-    # to see which joints' intertia decreased to " acceptable " level
-    # (define " acceptable ")
-    low_inertia = set()
-    high_inertia = set()
-
     # simple_plot_2d_2_curves(original_data[0].get_datatype('Norm').get_joint('LeftHand'),
     #                         original_data[0].get_datatype('SavgoledNorm').get_joint('LeftHand'))
 
@@ -433,22 +424,11 @@ def test_full_batch_k_var(path, original_data, name, validate_data=False,
             # and adjusted rand score, if the number of clusters correspond
             # to the number of clusters in the ground truth
             # If we're working only with the success, we have no ground truth
-            # so we can't ompute these scores
-            if not only_success and true_labels and k == len(set(true_labels)):
-                if k == 2:
-                    metrics['fs'] = f_score_computing(res.labels_, true_labels)
-                metrics['ami'] = adjusted_mutual_info_score_computing(res.labels_, true_labels)
-                metrics['ars'] = adjusted_rand_score_computing(res.labels_, true_labels)
+            # so we can't compute these scores
+            if not only_success and true_labels and k == len(np.unique(true_labels)):
+                metrics.update(compute_all_gt_metrics(res.labels_, true_labels))
 
-            if only_success or (not only_success and not true_labels):
-                metrics['ss'] = silhouette_score_computing(features, res.labels_)
-                metrics['ch'] = calinski_harabaz_score_computing(features, res.labels_)
-
-            # Checking the inertia for the sets
-            if res.inertia_ < 50:
-                low_inertia.add(joint_name)
-            else:
-                high_inertia.add(joint_name)
+            metrics.update(compute_all_clustering_metrics(features, res.labels_))
 
             if verbose:
                 print('Joint: {}'.format(joint))
