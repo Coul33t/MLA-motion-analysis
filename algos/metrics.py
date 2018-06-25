@@ -18,6 +18,14 @@ def recall_score_computing(labels, true_labels):
     if not isinstance(true_labels, np.ndarray):
         true_labels = np.asarray(true_labels)
 
+    # Since the c0 and c1 of labels may be the opposite of
+    # c0 and c1 from true_labels, we check for this here.
+    # If it's the case, we flip the labels in one of the array.
+    similarity = len(labels) - sum(abs(labels - true_labels))
+
+    if len(labels) - sum(abs(abs(labels - 1) - true_labels)) > similarity:
+        labels = abs(labels - 1)
+
     return recall_score(true_labels, labels)
 
 def precision_score_computing(labels, true_labels):
@@ -26,6 +34,14 @@ def precision_score_computing(labels, true_labels):
 
     if not isinstance(true_labels, np.ndarray):
         true_labels = np.asarray(true_labels)
+
+    # Since the c0 and c1 of labels may be the opposite of
+    # c0 and c1 from true_labels, we check for this here.
+    # If it's the case, we flip the labels in one of the array.
+    similarity = len(labels) - sum(abs(labels - true_labels))
+
+    if len(labels) - sum(abs(abs(labels - 1) - true_labels)) > similarity:
+        labels = abs(labels - 1)
 
     return precision_score(true_labels, labels)
 
@@ -36,6 +52,14 @@ def average_precision_score_computing(labels, true_labels):
 
     if not isinstance(true_labels, np.ndarray):
         true_labels = np.asarray(true_labels)
+
+    # Since the c0 and c1 of labels may be the opposite of
+    # c0 and c1 from true_labels, we check for this here.
+    # If it's the case, we flip the labels in one of the array.
+    similarity = len(labels) - sum(abs(labels - true_labels))
+
+    if len(labels) - sum(abs(abs(labels - 1) - true_labels)) > similarity:
+        labels = abs(labels - 1)
 
     return average_precision_score(true_labels, labels)
 
