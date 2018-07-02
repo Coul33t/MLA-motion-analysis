@@ -10,6 +10,12 @@ left_joints_list = [['LeftHand'],
                     ['LeftHand', 'LeftForeArm', 'LeftArm', 'LeftShoulder'],
                     ['LeftHand', 'LeftForeArm', 'LeftArm', 'LeftShoulder', 'Neck', 'Hips']]
 
+neutral_joints_list = [['Hand'],
+                      ['Hand', 'ForeArm'],
+                      ['Hand', 'ForeArm', 'Arm'],
+                      ['Hand', 'ForeArm', 'Arm', 'Shoulder'],
+                      ['Hand', 'ForeArm', 'Arm', 'Shoulder', 'Neck', 'Hips']]
+
 data_types_combination = [['BegMaxEndSpeedNorm'],
                           ['BegMaxEndSpeedx',     'BegMaxEndSpeedy',    'BegMaxEndSpeedz'],
                           ['BegMaxEndSpeedDirx',  'BegMaxEndSpeedDiry', 'BegMaxEndSpeedDirz'],
@@ -40,15 +46,36 @@ data_types_combination = [['BegMaxEndSpeedNorm'],
                           # ['AccelerationNorm', 'SpeedNorm', 'BegMaxEndSpeedNorm']
                           ]
 
-people_names = [['Aous', 'left'], ['Damien', 'left'], ['Esteban', 'right'], ['Guillaume', 'right'],
+people_names_O = [['Aous', 'left'], ['Damien', 'left'], ['Esteban', 'right'], ['Guillaume', 'right'],
                 ['Ines', 'right'], ['Iza', 'right'], ['Ludovic', 'right'], ['Marc', 'right'],
                 ['Oussema', 'right'], ['Pierre', 'right'], ['Sebastien', 'right'],
                 ['Vincent', 'right'], ['Yann', 'right'],
                 [['Aous', 'Damien'], 'left'],
                 [['Esteban', 'Guillaume', 'Ines', 'Iza', 'Ludovic', 'Marc', 'Oussema', 'Pierre', 'Sebastien', 'Vincent', 'Yann'], 'right']]
 
+
+people_names = [['Aous', 'left'], ['Damien', 'left'], ['Esteban', 'right'], ['Guillaume', 'right'],
+                ['Ines', 'right'], ['Iza', 'right'], ['Ludovic', 'right'], ['Marc', 'right'],
+                ['Oussema', 'right'], ['Pierre', 'right'], ['Sebastien', 'right'],
+                ['Vincent', 'right'], ['Yann', 'right']]
+
+names_labels = {'Aous': 'AKARAOUI_LABELS_2',
+                'Damien': 'DBRUN_LABELS_2',
+                'Esteban': 'ELOISEAU_LABELS_2',
+                'Guillaume': 'GLOUP_LABELS_2',
+                'Ines': 'IDABBEBI_LABELS_2',
+                'Iza': 'IMARFISI_LABELS_2',
+                'Ludovic': 'LHAMON_LABELS_2',
+                'Marc': 'MLECONTE_LABELS_2',
+                'Oussema': 'OMAHDI_LABELS_2',
+                'Pierre': 'PLAFORCADE_LABELS_2',
+                'Sebastien': 'SGEORGE_LABELS_2',
+                'Vincent': 'VBETTENFELD_LABELS_2',
+                'Yann': 'YWALKOWIAK_LABELS_2'}
+
 joints_name_corres = {'LeftHand': 'LH', 'LeftForeArm': 'LFA', 'LeftArm': 'LA', 'LeftShoulder': 'LS',
                       'RightHand': 'RH', 'RightForeArm': 'RFA', 'RightArm': 'RA', 'RightShoulder': 'RS',
+                      'Hand': 'H', 'ForeArm': 'FA', 'Arm': 'A', 'Shoulder': 'S',
                       'Neck': 'N', 'Hips': 'H'}
 
 data_types_corres = {'BegMaxEndSpeedNorm_BegMaxEndSpeedx_BegMaxEndSpeedy_BegMaxEndSpeedz': 'BegMaxEndSpeedNormxyz',
