@@ -179,6 +179,15 @@ def calinski_harabaz_score_computing(data, labels):
 
 def compute_all_clustering_metrics(data, labels):
     res = {}
+
+    if len(np.unique(labels)) == 1:
+        print('WARNING: only 1 label. No metric will be computed.')
+        return {}
+
+    if len(np.unique(labels)) == len(data):
+        print('WARNING: 1 label per data point. No metric will be computed.')
+        return {}
+
     res['ss'] = silhouette_score_computing(data, labels)
     res['ch'] = calinski_harabaz_score_computing(data, labels)
     return res
