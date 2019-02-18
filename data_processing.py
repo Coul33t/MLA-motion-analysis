@@ -25,7 +25,16 @@ from data_import import (return_files,
 
 # Clustering algorithms and metrics computing
 from algos.kmeans_algo import (kmeans_algo,
+                               kmeans_algo_2,
                                per_cluster_inertia)
+
+from algos.dbscan_algo import (dbscan_algo)
+
+from algos.agglomerative_algo import (agglomerative_algo)
+
+from algos.mean_shift_algo import (mean_shift_algo)
+
+from algos.gmm_algo import (gmm_algo)
 
 from algos.metrics import (f_score_computing,
                            adjusted_mutual_info_score_computing,
@@ -39,13 +48,17 @@ from algos.metrics import (f_score_computing,
 from data_visualization import (plot_data_k_means,
                                 plot_data_sub_k_means,
                                 simple_plot_2d,
-                                simple_plot_2d_2_curves)
+                                simple_plot_2d_2_curves,
+                                plot_PCA)
+
+from visualisation.agglomerative_dendogram import (plot_dendrogram)
 
 # Results class
 from results_analysing import Results
 
 # Ground truth for data
 import data_labels as dl
+
 # Constants (well more like " huge lists " but whatever)
 import constants as cst
 
@@ -55,7 +68,7 @@ def joint_selection(data, joints_to_append):
         from a list of Motion objects.
     """
 
-    # We gonna switch from dict to OrederedDict, to ensure that each
+    # We gonna switch from dict to OrderedDict, to ensure that each
     # features vector has the same joints order
     selected_data = []
 
@@ -75,7 +88,7 @@ def joint_selection(data, joints_to_append):
         for datatype in datatypes:
 
             # We use an OrderedDict. Since we iterate over the joints_to_append
-            # list,  the order is ensured to be the same for each motion
+            # list, the order is ensured to be the same for each motion
             joints_selected = OrderedDict()
 
             # For each joint to append
@@ -134,6 +147,39 @@ def data_selection(data, data_to_keep):
     # We return the list as a numpy array, as it is more
     # convenient to use
     return np.asarray(features)
+
+
+def check_algo_parameters(algo, parameters):
+    clean_parameters = {}
+    if algo == 'k-means':
+        clean_parameters['n_clusters']  = 2 if 'n_clusters' not in parameters else parameters['n_clusters']
+        clean_parameters['init']        = 'k-means++' if 'init' not in parameters else parameters['init']
+        clean_parameters['n_init']      = 10 if 'n_init' not in parameters else parameters['n_init']
+        clean_parameters['tol']         = 1e-4 if 'tol' not in parameters else parameters['tol']
+        clean_parameters['verbose']     = 0 if 'verbose' not in parameters else parameters['verbose']
+
+    elif algo == 'dbscan':
+        clean_parameters['eps']             = 0.5 if 'eps' not in parameters else parameters['eps']
+        clean_parameters['min_samples']     = 5 if 'min_samples' not in parameters else parameters['min_samples']
+        clean_parameters['metric']          = 'euclidean' if 'metric' not in parameters else parameters['metric']
+        clean_parameters['algorithm']       = 'auto' if 'algorithm' not in parameters else parameters['algorithm']
+
+    elif algo == 'agglomerative':
+        clean_parameters['n_clusters']  = 2 if 'n_clusters' not in parameters else parameters['n_clusters']
+        clean_parameters['affinity']    = 'euclidean' if 'affinity' not in parameters else parameters['affinity']
+        clean_parameters['linkage']     = 'ward' if 'linkage' not in parameters else parameters['linkage']
+
+    elif algo == 'mean-shift':
+        clean_parameters['cluster_all'] = False if 'cluster_all' not in parameters else parameters['cluster_all']
+
+    elif algo == 'gmm':
+        clean_parameters['n_components']    = 1 if 'n_components' not in parameters else parameters['n_components']
+        clean_parameters['covariance_type'] = 'full' if 'covariance_type' not in parameters else parameters['covariance_type']
+        clean_parameters['tol']             = 1e-3 if 'tol' not in parameters else parameters['tol']
+        clean_parameters['max_iter']        = 100 if 'max_iter' not in parameters else parameters['max_iter']
+        clean_parameters['n_init']          = 1 if 'n_init' not in parameters else parameters['n_init']
+
+    return clean_parameters
 
 
 def distance_matrix_computing(data):
@@ -513,6 +559,123 @@ def test_full_batch_k_var(path, original_data, name, validate_data=False,
                           name=plot_save_name, path=path_to_export,
                           graph_title=plot_save_name.replace('_', ' '),
                           x_label='k value', y_label=data_to_graph)
+
+def run_clustering(path, original_data, name, validate_data=False,
+                   joint_to_use=None, data_to_select=None, algorithm='k-means',
+                   parameters={}, true_labels=None, verbose=False, to_file=True,
+                   to_json=True, display_graph=False, save_graph=False,
+                   data_to_graph=None, only_success=False, return_data=False):
+
+    """
+        This function run a k-means algorithm with varying k values,
+        on each joint.
+    """
+
+    if algorithm not in cst.implemented_algo:
+        print(f'ERROR: {algorithm} not implemented (yet).')
+        return
+
+    # To extract the succesful motion only, we need the ground truth with c = 2
+    # (c0 = failure, c1 = success)
+    if only_success and (not true_labels or len(set(true_labels)) != 2):
+        print('ERROR: must have true labels with c=2 to extract the succesful motions only.')
+        return
+
+    if (display_graph or save_graph) and not data_to_graph:
+        print('ERROR: no data specified for graph output.')
+        return
+
+    if validate_data:
+        for motion in original_data:
+            motion.validate_motion()
+
+    # If there's no specific datatype defined, we take all the data available
+    if not data_to_select:
+        data_to_select = set([name for motion in original_data for name in motion.datatypes])
+
+    if verbose:
+        print('\nData used: {}'.format(data_to_select))
+
+    # If there's no joint to select, then we take all of them
+    if joint_to_use is None:
+        joint_to_use = original_data[0].get_joint_list()
+
+    if verbose:
+        print('Joints used: {}\n'.format(joint_to_use))
+
+    # This dict will contain each joint as a key, and for each
+    # joint, a list of list, [nb_cluster, inertia]
+    # Since Python 3.7, no need to use OrderedDict to preserve
+    # insertion order
+    res_k = {}
+
+    # Initialising
+    for joint in joint_to_use:
+        # If it's a combination of joints
+        if isinstance(joint, list):
+            res_k[','.join(joint)] = []
+        else:
+            res_k[joint] = []
+
+    results = Results()
+
+    if isinstance(joint_to_use, list):
+        joint_to_use = ','.join(joint_to_use)
+
+    # We keep the joints' data we're interested in
+    # (from the motion class)
+    selected_data = joint_selection(original_data, joint_to_use)
+
+    # We select the data we want and we put them in the right shape
+    # for the algorithm
+    # [sample1[f1, f2, ...], sample2[f1, f2, f3...], ...]
+    features = data_selection(selected_data, data_to_select)
+
+    # If we only work with the succesful motions,
+    # we only keep these ones (c == 1 for success)
+    if only_success:
+        features = features[(np.asarray(true_labels) == 1)]
+
+    # Compute the euclidean distance between each sample
+    # (Unused in this version)
+    # d_m = distance_matrix_computing(features)
+    #
+    # c_res = compute_mean_std(d_m, GLOUP_SUCCESS, natural_indexes=True)
+
+    params = check_algo_parameters(algorithm, parameters)
+
+    if algorithm == 'k-means':
+        # Actual k-means
+        res = kmeans_algo_2(features, params)
+
+    elif algorithm == 'dbscan':
+        res = dbscan_algo(features, params)
+
+    elif algorithm == 'agglomerative':
+        res = agglomerative_algo(features, params)
+        plot_dendrogram(res)
+
+    elif algorithm == 'mean-shift':
+        res = mean_shift_algo(features, params)
+
+    elif algorithm == 'gmm':
+        res = gmm_algo(features, params)
+
+    metrics = {}
+    # Computing the f1-score, adjusted mutual information score
+    # and adjusted rand score, if the number of clusters correspond
+    # to the number of clusters in the ground truth
+    # If we're working only with the success, we have no ground truth
+    # so we can't compute these scores
+    if not only_success and true_labels and k == len(np.unique(true_labels)):
+        metrics.update(compute_all_gt_metrics(res.labels_, true_labels))
+
+    metrics.update(compute_all_clustering_metrics(features, res.labels_))
+
+    if return_data:
+        return(res, metrics, features)
+
+    return (res, metrics)
 
 def clusters_composition(labels, true_labels, sample_nb, verbose=False):
     """
