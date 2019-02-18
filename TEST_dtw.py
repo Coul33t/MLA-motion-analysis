@@ -158,7 +158,7 @@ def main_fastdtw_compute():
     if not original_data:
         print('ERROR: no data found (check your names).')
 
-    data_to_select = [['AccNorm']]
+    data_to_select = [['SpeedNorm']]
     # If there's no specific datatype defined, we take all the data available
     if not data_to_select:
         data_to_select = set([name for motion in original_data for name in motion.datatypes])
@@ -213,7 +213,7 @@ def main_fastdtw_compute():
             f_o.close()
 
 def main_regroup(verbose=False):
-    f_o = open("RightHand_AccNorm_Leo_fastdtw_matrix.txt", "r")
+    f_o = open("RightHand_SpeedNorm_Leo_fastdtw_matrix.txt", "r")
     txt = f_o.read()
     mat = []
     for i,line in enumerate(txt.split('\n')):

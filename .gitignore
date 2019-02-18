@@ -6,6 +6,8 @@ Profiles/
 *.txt
 *.svg
 *.gml
+ex1/
+tmp_res/
 # ---------------------
 
 # Byte-compiled / optimized / DLL files
