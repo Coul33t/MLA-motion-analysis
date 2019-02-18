@@ -37,13 +37,13 @@ def return_data(f, joints_to_append=None):
     data = OrderedDict()
 
     for folder in return_files(f):
-        
+
         motion_data = []
-        
+
         for subfolders in return_files(f + '/' + folder, '.json', False):
-            
+
             seg_data = []
-            
+
             for file in return_files (f + '/' + folder + '/' + subfolders, '.csv', True):
 
                 seg_data.append(file_gathering_dict(f + '/' + folder + '/' + subfolders + '/' + file))
@@ -52,8 +52,8 @@ def return_data(f, joints_to_append=None):
             motion_data.append(seg_data)
 
         full_data.append(motion_data)
-               
-   
+
+
     return full_data
 
 
@@ -69,13 +69,13 @@ def return_data_with_names(f, joints_to_append=None):
     data = OrderedDict()
 
     for folder in return_files(f):
-        
+
         motion_data = []
-        
+
         for subfolder in return_files(f + '/' + folder, '.json', False):
-            
+
             seg_data = []
-            
+
             for file in return_files (f + '/' + folder + '/' + subfolder, '.csv', True):
 
                 seg_data.append([file, file_gathering_dict(f + '/' + folder + '/' + subfolder + '/' + file)])
@@ -84,7 +84,7 @@ def return_data_with_names(f, joints_to_append=None):
             motion_data.append([subfolder, seg_data])
 
         full_data.append([folder, motion_data])
-               
+
     return full_data
 
 def json_import(folder_path, folder_name=None):
@@ -104,11 +104,19 @@ def json_import(folder_path, folder_name=None):
 
 
             for file in file_list:
-                
+
                 # Stripping the '.json'
                 motion = Motion(name=file[:-5])
-                motion.pre_processing_info = json.load(open(folder_path + '/' + folder + '/' + 'motion_information.json'))
-                motion.post_processing_info = json.load(open(folder_path + '/' + folder + '/' + 'segmentation_information.json'))
+
+                try:
+                    motion.pre_processing_info = json.load(open(folder_path + '/' + folder + '/' + 'motion_information.json'))
+                except FileNotFoundError:
+                    print(f'WARNING: no pre-processing information for {folder}')
+
+                try:
+                    motion.post_processing_info = json.load(open(folder_path + '/' + folder + '/' + 'segmentation_information.json'))
+                except FileNotFoundError:
+                    print(f'WARNING: no post-processing information for {folder}')
 
                 with open(folder_path + '/' + folder + '/' + subfolders + '/' + file, 'r') as f:
                     json_file = json.load(f)
@@ -125,7 +133,7 @@ def json_specific_import(folder_path, file_list):
     """
     full_data = []
 
-    for file in file_list:              
+    for file in file_list:
         motion = Motion(name=file)
         motion.pre_processing_info = json.load(open(folder_path + '/' + file + '/' + 'motion_information.json'))
         motion.post_processing_info = json.load(open(folder_path + '/' + file + '/' + 'segmentation_information.json'))
