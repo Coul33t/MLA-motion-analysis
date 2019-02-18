@@ -1,3 +1,5 @@
+implemented_algo = ('k-means', 'dbscan', 'agglomerative', 'mean-shift', 'gmm')
+
 right_joints_list = [['RightHand'],
                      ['RightHand', 'RightForeArm'],
                      ['RightHand', 'RightForeArm', 'RightArm'],
