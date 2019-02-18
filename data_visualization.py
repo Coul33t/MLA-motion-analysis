@@ -3,6 +3,8 @@ import pdb
 
 import os
 
+from math import (ceil, floor)
+
 import numpy as np
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
@@ -13,6 +15,8 @@ from scipy.signal import savgol_filter, savgol_coeffs, correlate
 from scipy.signal import butter, lfilter
 
 from tools import natural_keys
+
+from sklearn.decomposition import PCA
 
 import constants as cst
 #TODO : better data visualization function
@@ -253,10 +257,6 @@ def plot_data_sub_k_means(data, joint, display=False, save=False, name='foo', pa
 
     plt.close()
 
-def plot_data_k_means_PCA(data, labels):
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-
 
 def plot_res(res_data, metrics='all', save=False, name='foo'):
 
@@ -351,6 +351,87 @@ def simple_plot_2d_2_curves(data1, data2):
 
     plt.show()
 
+def simple_plot_curves(data):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    max_length = 0
+    processed_data = []
+
+    # We put every curve into processed_data
+    for curve in data:
+        current_curve = np.asarray(curve)
+
+        if current_curve.shape[0] > max_length:
+            max_length = current_curve.shape[0]
+
+        processed_data.append(current_curve)
+    # We normalise the length of every curve (adding 0 after)
+
+    x = np.linspace(0, max_length-1, max_length)
+    ax.set_xlabel('Frame')
+    ax.set_ylabel('Linear speed (m/s)')
+
+    color=iter(cm.rainbow(np.linspace(0,1,len(processed_data))))
+    for i, curve in enumerate(processed_data):
+        if curve.shape[0] < max_length:
+            processed_data[i] = np.concatenate((curve, np.asarray([None for x in range(max_length - curve.shape[0])])))
+        c = next(color)
+        ax.plot(x, processed_data[i], color=c)
+
+    plt.show()
+
+def plot_PCA(data, labels):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    pca = PCA(n_components=2, copy=True)
+    pca_ed = pca.fit_transform(data)
+
+    color = cm.rainbow(np.linspace(0,1,len(np.unique(labels))))
+
+    if -1 in labels:
+        labels = labels + 1
+
+    for i, pt in enumerate(pca_ed):
+        plt.plot(pt[0], pt[1], 'o', color=color[labels[i]])
+
+    plt.show()
+
+def multi_plot_PCA(data, labels, names):
+
+    size = len(data)
+    final_x = 0
+
+    for i in range(10):
+        if pow(i,2) < size:
+            final_x += 1
+
+    final_y = ceil(size / final_x)
+
+    fig, axs = plt.subplots(final_y, final_x, sharex=True, sharey=True)
+
+    for i in range(len(data)):
+
+        pca = PCA(n_components=2, copy=True)
+        pca_ed = pca.fit_transform(data[i])
+
+        current_labels = labels[i]
+        current_axis = axs[floor(i/final_x)][i%final_x]
+
+        color = cm.rainbow(np.linspace(0,1,len(np.unique(current_labels))))
+
+        if -1 in current_labels:
+            current_labels = current_labels + 1
+
+        for j, pt in enumerate(pca_ed):
+            current_axis.plot(pt[0], pt[1], 'o', color=color[current_labels[j]])
+
+        current_axis.set_title(names[i])
+
+    plt.show()
+
+
 def test():
     data = []
     mean_len = []
@@ -384,26 +465,36 @@ def test():
     print('TEST : {}'.format(np.argmax(correlate(data[1], data[1]))))
     pdb.set_trace()
 
+def test_n_curves():
+    from data_import import json_import
+    path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/testaccbugandjerk/'
+    data = []
+    for i in range(100):
+        data.append(json_import(path, f'Leo_{i+1}Char00')[0].get_datatype('SpeedNorm').get_joint('RightHand'))
+
+    simple_plot_curves(data)
 
 if __name__ == '__main__':
+    test_n_curves()
+    # from data_import import json_import
+    # path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/testaccbugandjerk/'
+    # yo = json_import(path, 'Leo_1Char00')
+    # yo = yo[0]
 
-    from data_import import json_import
-    path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/LALALAOUS/'
-    yo = json_import(path, 'Aous_100Char00')
-    yo = yo[0]
+    # path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/testaccbugandjerk/'
+    # ya = json_import(path, 'Leo_2Char00')
+    # ya = ya[0]
 
-    path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/Bottle_Flip_Challenge/good_last_use_this_one_not_sure/'
-    ya = json_import(path, 'Aous_100Char00')
-    ya = ya[0]
+    # normo = yo.get_datatype('SpeedNorm')
+    # normov = normo.get_joint('RightHand')
 
-    normo = yo.get_datatype('SpeedNorm')
-    normov = normo.get_joint('LeftHand')
+    # norma = ya.get_datatype('SpeedNorm')
+    # normav = norma.get_joint('RightHand')
 
-    norma = ya.get_datatype('SpeedNorm')
-    normav = norma.get_joint('LeftHand')
 
-    pdb.set_trace()
-    simple_plot_2d_2_curves(normov, normav)
+    # pdb.set_trace()
+    # simple_plot_2d_2_curves(normov, normav)
+
     # from data_import import json_import
     # path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed'
     # yo = json_import(path, 'TEST_VIS')
