@@ -1,11 +1,18 @@
 import constants as cst
+import data_labels as dl
 
 from data_import import json_import
 
 from data_processing import (test_full_batch_k_var,
                              k_mean_mixed,
                              k_means_second_pass,
-                             k_means_second_pass_all_data)
+                             k_means_second_pass_all_data,
+                             run_clustering)
+
+from data_visualization import (plot_PCA,
+                                multi_plot_PCA)
+
+import pdb
 
 def import_data(path, import_find):
     original_data = []
@@ -83,7 +90,7 @@ def main_all_joints():
 def main_all_together():
     people_names = cst.people_names
     data_types_combination = cst.data_types_combination
-    joint_list = cst.right_joints_list
+    joint_list = cst.neutral_joints_list
     path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/Bottle_Flip_Challenge/glu/'
 
     original_data = []
@@ -97,7 +104,6 @@ def main_all_together():
             original_data.extend(import_data(path, [name]))
             labels.extend(getattr(dl, cst.names_labels[name]))
 
-    pdb.set_trace()
     print(f'Setting laterality')
     set_dominant(original_data)
 
@@ -110,7 +116,6 @@ def main_all_together():
                                     to_json=True, display_graph=False, save_graph=True,
                                     data_to_graph='ss'))
 
-    pdb.set_trace()
 
 def main_leo():
     data_types_combination = cst.data_types_combination
@@ -121,8 +126,9 @@ def main_leo():
     joint_list =  cst.right_joints_list
 
     original_data = import_data(path, [name])
-    original_data = select_one_class(original_data, dl.LEO_THROW_LABELS, 1)
-    labels = dl.LEO_LABELS_2[50:]
+    # original_data = select_one_class(original_data, dl.LEO_THROW_LABELS, 1)
+    # labels = dl.LEO_LABELS_2[50:]
+    labels =dl.LEO_THROW_TYPES
 
     for data_to_select in data_types_combination:
         print(f'\n\n\nProcessing {name}...')
@@ -184,15 +190,97 @@ def test():
         for j in range(100):
             if tst[i].get_datatype('BegMaxEndSpeedNorm').get_joint('LeftHand') != original_data[(i*100) + i].get_datatype('BegMaxEndSpeedNorm').get_joint('LeftHand'):
                 valid = False
-                pdb.set_trace()
 
         print(valid)
 
+def darts_test():
+    path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/testBB/'
+    name = 'me'
+    original_data = import_data(path, [name])
+    joints = ['LeftArmLeftForeArmLeftHandLeftShoulder']
+    data = ['BoundingBoxMinusX', 'BoundingBoxPlusX',
+          'BoundingBoxMinusY', 'BoundingBoxPlusY',
+          'BoundingBoxMinusZ', 'BoundingBoxPlusZ']
+
+    original_data = original_data[:30]
+
+    algos = {'k-means': {'n_clusters': 2},
+             'dbscan': {'eps': 12, 'min_samples': 2},
+             'agglomerative': {'n_clusters': 2},
+             'mean-shift': {},
+             'gmm': {'n_components': 2}}
+
+
+    names = []
+    labels = []
+    features = []
+
+    for algo, param in algos.items():
+        res = run_clustering(path, original_data, name, validate_data=False,
+                             joint_to_use=joints, data_to_select=data, algorithm=algo,
+                             parameters=param, true_labels=None, verbose=False, to_file=True,
+                             to_json=True, display_graph=False, save_graph=False,
+                             data_to_graph=None, only_success=False, return_data=True)
+
+        print(f'{algo} with {param}: {res[0].labels_}')
+        if 'ss' in res[1]:
+            print(f'Silhouette Score: {res[1]["ss"]}')
+            names.append(algo)
+            labels.append(res[0].labels_)
+            features.append(res[2])
+
+    features.append(features[0])
+    labels.append(dl.FAKE_DARTS_LABELS[:30])
+    names.append('Ground Truth')
+    multi_plot_PCA(features, labels, names)
+
+def find_optimal_dbscan_eps():
+    path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/testBB/'
+    name = 'me'
+    original_data = import_data(path, [name])
+    joints = ['LeftArmLeftForeArmLeftHandLeftShoulder']
+    data = ['BoundingBoxMinusX', 'BoundingBoxPlusX',
+          'BoundingBoxMinusY', 'BoundingBoxPlusY',
+          'BoundingBoxMinusZ', 'BoundingBoxPlusZ']
+
+    original_data = original_data[0:40]
+
+    eps = 0
+    ss_s = 0
+    nb_min= 0
+    labels = []
+
+    features = []
+
+    for i in range(2,34):
+        for j in range(1,len(original_data)-1):
+            res = run_clustering(path, original_data, name, validate_data=False,
+                                 joint_to_use=joints, data_to_select=data, algorithm='dbscan',
+                                 parameters={'eps': i/2, 'min_samples': j}, true_labels=None, verbose=False, to_file=True,
+                                 to_json=True, display_graph=False, save_graph=False,
+                                 data_to_graph=None, only_success=False, return_data=True)
+
+            if 'ss' in res[1]:
+                ssres = res[1]['ss']
+                if ssres > ss_s:
+                    ss_s = ssres
+                    eps = i/2
+                    nb_min = j
+                    labels = res[0].labels_
+                    features = res[2]
+
+    print(f'dbscan with eps={eps} and min_samples={nb_min}: {labels}')
+    print(f'Silhouette Score: {ss_s}')
+
+    plot_PCA(features, labels)
+
 if __name__ == '__main__':
     # test()
-    main_all_together()
+    # main_all_together()
     # main_all_joints()
     # main_leo()
+    darts_test()
+    # find_optimal_dbscan_eps()
     # original_data = json_import(r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/', 'TEST_VIS')
 
     # data_to_select = [['Norm'], ['NewThrowNorm']]
