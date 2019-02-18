@@ -19,6 +19,10 @@ def kmeans_algo(data, algo='k-means++', k=2, verbose=False, extrem_verbose=False
 
     return res
 
+def kmeans_algo_2(data, params):
+    res = KMeans(**params).fit(list(data))
+
+    return res
 
 def per_cluster_inertia(data, centers, labels):
     """
