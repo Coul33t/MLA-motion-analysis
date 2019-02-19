@@ -1,3 +1,5 @@
+from math import floor, ceil
+
 import constants as cst
 import data_labels as dl
 
@@ -11,8 +13,6 @@ from data_processing import (test_full_batch_k_var,
 
 from data_visualization import (plot_PCA,
                                 multi_plot_PCA)
-
-import pdb
 
 def import_data(path, import_find):
     original_data = []
@@ -202,48 +202,62 @@ def darts_test():
           'BoundingBoxMinusY', 'BoundingBoxPlusY',
           'BoundingBoxMinusZ', 'BoundingBoxPlusZ']
 
-    original_data = original_data[:30]
+    # original_data = original_data[0:30]
 
-    algos = {'k-means': {'n_clusters': 2},
-             'dbscan': {'eps': 12, 'min_samples': 2},
-             'agglomerative': {'n_clusters': 2},
-             'mean-shift': {},
-             'gmm': {'n_components': 2}}
+    print(f'\n\nParameters estimation')
+    dbscan_eps, dbscan_nb_min = find_optimal_dbscan_params(path, name, joints, data, original_data)
+    k_means_k = find_optimal_kmeans_k(path, name, joints, data, original_data)
+    gmm_components = find_optimal_gmm_components(path, name, joints, data, original_data)
+    agglo_n = find_optimal_agglomerative_n(path, name, joints, data, original_data)
+    mean_shift_quantile = find_optimal_mean_shift_bw(path, name, joints, data, original_data)
 
+    algos = {'k-means': {'n_clusters': k_means_k},
+             'dbscan': {'eps': dbscan_eps, 'min_samples': dbscan_nb_min},
+             'mean-shift': {'quantile': mean_shift_quantile},
+             'gmm': {'n_components': gmm_components},
+             'agglomerative': {'n_clusters': agglo_n}}
 
+    models = []
     names = []
     labels = []
     features = []
+    sss = []
 
+    print(f'\n\nRunning algorithms with estimated parameters')
     for algo, param in algos.items():
         res = run_clustering(path, original_data, name, validate_data=False,
-                             joint_to_use=joints, data_to_select=data, algorithm=algo,
-                             parameters=param, true_labels=None, verbose=False, to_file=True,
-                             to_json=True, display_graph=False, save_graph=False,
-                             data_to_graph=None, only_success=False, return_data=True)
+                               joint_to_use=joints, data_to_select=data, algorithm=algo,
+                               parameters=param, true_labels=None, verbose=False, to_file=True,
+                               to_json=True, display_graph=False, save_graph=False,
+                               data_to_graph=None, only_success=False, return_data=True)
 
+        models.append(res[0])
+        print('\n')
         print(f'{algo} with {param}: {res[0].labels_}')
         if 'ss' in res[1]:
             print(f'Silhouette Score: {res[1]["ss"]}')
+            sss.append(f'{res[1]["ss"]:.2f}')
             names.append(algo)
             labels.append(res[0].labels_)
             features.append(res[2])
+        else:
+            print(f'No ss')
 
-    features.append(features[0])
-    labels.append(dl.FAKE_DARTS_LABELS[:30])
-    names.append('Ground Truth')
-    multi_plot_PCA(features, labels, names)
+    # ---------------------------------------------- #
+    #  Adding the Ground Truth for display purposes  #
+    # ---------------------------------------------- #
+    features.insert(0, features[0])
+    labels.insert(0, dl.FAKE_DARTS_LABELS)
+    names.insert(0, 'Ground Truth')
+    models.insert(0, None)
+    sss.insert(0, 1)
+    # ---------------------------------------------- #
 
-def find_optimal_dbscan_eps():
-    path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/testBB/'
-    name = 'me'
-    original_data = import_data(path, [name])
-    joints = ['LeftArmLeftForeArmLeftHandLeftShoulder']
-    data = ['BoundingBoxMinusX', 'BoundingBoxPlusX',
-          'BoundingBoxMinusY', 'BoundingBoxPlusY',
-          'BoundingBoxMinusZ', 'BoundingBoxPlusZ']
+    title = '4 classes: correct, left, right, wild'
+    multi_plot_PCA(features, labels, names, models, sss, title)
 
-    original_data = original_data[0:40]
+
+def find_optimal_dbscan_params(path, name, joints, data, original_data):
 
     eps = 0
     ss_s = 0
@@ -262,7 +276,7 @@ def find_optimal_dbscan_eps():
 
             if 'ss' in res[1]:
                 ssres = res[1]['ss']
-                if ssres > ss_s:
+                if not (-1 in res[0].labels_ and len(set(res[0].labels_)) == 2) and ssres > ss_s:
                     ss_s = ssres
                     eps = i/2
                     nb_min = j
@@ -272,8 +286,138 @@ def find_optimal_dbscan_eps():
     print(f'dbscan with eps={eps} and min_samples={nb_min}: {labels}')
     print(f'Silhouette Score: {ss_s}')
 
-    plot_PCA(features, labels)
+    # plot_PCA(features, labels)
 
+    return eps, nb_min
+
+
+def find_optimal_kmeans_k(path, name, joints, data, original_data):
+
+    nb_clusters = 0
+    ss_s = 0
+    labels = []
+
+    features = []
+
+    for i in range(2, ceil(len(original_data)/2)):
+        res = run_clustering(path, original_data, name, validate_data=False,
+                             joint_to_use=joints, data_to_select=data, algorithm='k-means',
+                             parameters={'n_clusters': i}, true_labels=None, verbose=False, to_file=True,
+                             to_json=True, display_graph=False, save_graph=False,
+                             data_to_graph=None, only_success=False, return_data=True)
+
+        if 'ss' in res[1]:
+            ssres = res[1]['ss']
+            if ssres > ss_s:
+                ss_s = ssres
+                nb_clusters = i
+                labels = res[0].labels_
+                features = res[2]
+
+    print(f'k-means with {nb_clusters} clusters: {labels}')
+    print(f'Silhouette Score: {ss_s}')
+
+    # plot_PCA(features, labels)
+
+    return nb_clusters
+
+
+def find_optimal_gmm_components(path, name, joints, data, original_data):
+
+    n_components = 0
+    ss_s = 0
+    labels = []
+
+    features = []
+
+    for i in range(2, ceil(len(original_data)/2)):
+        res = run_clustering(path, original_data, name, validate_data=False,
+                             joint_to_use=joints, data_to_select=data, algorithm='gmm',
+                             parameters={'n_components': i}, true_labels=None, verbose=False, to_file=True,
+                             to_json=True, display_graph=False, save_graph=False,
+                             data_to_graph=None, only_success=False, return_data=True)
+
+        if 'ss' in res[1]:
+            ssres = res[1]['ss']
+            if ssres > ss_s:
+                ss_s = ssres
+                n_components = i
+                labels = res[0].labels_
+                features = res[2]
+
+
+    print(f'gmm with {n_components} gaussian: {labels}')
+    print(f'Silhouette Score: {ss_s}')
+
+    # plot_PCA(features, labels)
+
+    return n_components
+
+
+def find_optimal_agglomerative_n(path, name, joints, data, original_data):
+
+    best_n = 0
+    ss_s = 0
+    labels = []
+
+    features = []
+
+    for i in range(2, ceil(len(original_data)/2)):
+        res = run_clustering(path, original_data, name, validate_data=False,
+                             joint_to_use=joints, data_to_select=data, algorithm='agglomerative',
+                             parameters={'n_clusters': i}, true_labels=None, verbose=False, to_file=True,
+                             to_json=True, display_graph=False, save_graph=False,
+                             data_to_graph=None, only_success=False, return_data=True)
+
+        if 'ss' in res[1]:
+            ssres = res[1]['ss']
+            if ssres > ss_s:
+                ss_s = ssres
+                best_n = i
+                labels = res[0].labels_
+                features = res[2]
+
+
+    print(f'agglomerative with {best_n} clusters: {labels}')
+    print(f'Silhouette Score: {ss_s}')
+
+    # plot_PCA(features, labels)
+
+    return best_n
+
+
+def find_optimal_mean_shift_bw(path, name, joints, data, original_data):
+
+    bw = 0
+    ss_s = 0
+    labels = []
+
+    features = []
+
+    for i in range(1, 20):
+        res = run_clustering(path, original_data, name, validate_data=False,
+                             joint_to_use=joints, data_to_select=data, algorithm='mean-shift',
+                             parameters={'quantile': i/20}, true_labels=None, verbose=False, to_file=True,
+                             to_json=True, display_graph=False, save_graph=False,
+                             data_to_graph=None, only_success=False, return_data=True)
+
+        if 'ss' in res[1]:
+            ssres = res[1]['ss']
+
+            # If we only have 0 and -1 (orphans), no good ma friand
+            if not (-1 in res[0].labels_ and len(set(res[0].labels_)) == 2) and ssres > ss_s:
+                ss_s = ssres
+                bw = i/20
+                labels = res[0].labels_
+                features = res[2]
+
+
+    print(f'agglomerative with {bw} bandwidth: {labels}')
+    print(f'Silhouette Score: {ss_s}')
+
+    # plot_PCA(features, labels)
+
+    return bw
 if __name__ == '__main__':
     # test()
     # main_all_together()
