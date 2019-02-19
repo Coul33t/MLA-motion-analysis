@@ -111,12 +111,14 @@ def json_import(folder_path, folder_name=None):
                 try:
                     motion.pre_processing_info = json.load(open(folder_path + '/' + folder + '/' + 'motion_information.json'))
                 except FileNotFoundError:
-                    print(f'WARNING: no pre-processing information for {folder}')
+                    # print(f'WARNING: no pre-processing information for {folder}')
+                    pass
 
                 try:
                     motion.post_processing_info = json.load(open(folder_path + '/' + folder + '/' + 'segmentation_information.json'))
                 except FileNotFoundError:
-                    print(f'WARNING: no post-processing information for {folder}')
+                    # print(f'WARNING: no post-processing information for {folder}')
+                    pass
 
                 with open(folder_path + '/' + folder + '/' + subfolders + '/' + file, 'r') as f:
                     json_file = json.load(f)
