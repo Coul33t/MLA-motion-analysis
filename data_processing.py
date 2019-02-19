@@ -11,6 +11,8 @@ import pdb
 # External lib packages
 import numpy as np
 
+from sklearn.cluster import estimate_bandwidth
+
 # Personnal packages
 from tools import (flatten_list,
                    motion_dict_to_list,
@@ -48,10 +50,7 @@ from algos.metrics import (f_score_computing,
 from data_visualization import (plot_data_k_means,
                                 plot_data_sub_k_means,
                                 simple_plot_2d,
-                                simple_plot_2d_2_curves,
-                                plot_PCA)
-
-from visualisation.agglomerative_dendogram import (plot_dendrogram)
+                                simple_plot_2d_2_curves)
 
 # Results class
 from results_analysing import Results
@@ -170,6 +169,7 @@ def check_algo_parameters(algo, parameters):
         clean_parameters['linkage']     = 'ward' if 'linkage' not in parameters else parameters['linkage']
 
     elif algo == 'mean-shift':
+        clean_parameters['quantile']    = 0.3 if 'quantile' not in parameters else parameters['quantile']
         clean_parameters['cluster_all'] = False if 'cluster_all' not in parameters else parameters['cluster_all']
 
     elif algo == 'gmm':
@@ -653,9 +653,16 @@ def run_clustering(path, original_data, name, validate_data=False,
 
     elif algorithm == 'agglomerative':
         res = agglomerative_algo(features, params)
-        plot_dendrogram(res)
 
     elif algorithm == 'mean-shift':
+        if 'quantile' in params:
+            estimated_bw = estimate_bandwidth(features, params['quantile'])
+
+            if estimated_bw > 0:
+                params['bandwidth'] =  estimated_bw
+
+            params.pop('quantile')
+
         res = mean_shift_algo(features, params)
 
     elif algorithm == 'gmm':
