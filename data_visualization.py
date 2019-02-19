@@ -1,3 +1,4 @@
+# Native modules
 import math
 import pdb
 
@@ -5,18 +6,24 @@ import os
 
 from math import (ceil, floor)
 
+# Libraries modules
 import numpy as np
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
-from scipy.signal import savgol_filter, savgol_coeffs, correlate
+from scipy.signal import (savgol_filter, savgol_coeffs,
+                          correlate, butter, lfilter)
 
-from scipy.signal import butter, lfilter
+from scipy.cluster.hierarchy import dendrogram
 
-from tools import natural_keys
 
 from sklearn.decomposition import PCA
+
+# Personal modules
+from tools import natural_keys
+
+from visualisation.agglomerative_dendogram import plot_dendrogram
 
 import constants as cst
 #TODO : better data visualization function
@@ -398,9 +405,15 @@ def plot_PCA(data, labels):
 
     plt.show()
 
-def multi_plot_PCA(data, labels, names):
+def multi_plot_PCA(data, labels, names, models, sss, title=None):
 
     size = len(data)
+
+    # More for dendrogram
+    if 'agglomerative' in names:
+        size += names.count('agglomerative')
+
+    # Computing the needed space for plotting
     final_x = 0
 
     for i in range(10):
@@ -409,28 +422,76 @@ def multi_plot_PCA(data, labels, names):
 
     final_y = ceil(size / final_x)
 
-    fig, axs = plt.subplots(final_y, final_x, sharex=True, sharey=True)
+    fig, axs = plt.subplots(final_y, final_x, sharex=False, sharey=False)
 
-    for i in range(len(data)):
+    fig.suptitle(title, fontsize=30)
 
+    i = 0
+
+    # While i instead of for i because of the dendrograms
+    while i < (len(data)):
+
+        # A PCA is ran on the data to plot them in 2D
         pca = PCA(n_components=2, copy=True)
         pca_ed = pca.fit_transform(data[i])
 
         current_labels = labels[i]
+
+        # Let say that we take classes 2 and 3 for the test, algorithms
+        # will still labels clusters from 0 to n, but ground truth will
+        # label them as 2 and 3, which is problematic for index display
+        if names[i] == 'Ground Truth':
+            # Ground Truth is casted to a numpy array, see the assignation
+            # line in the next for loop
+            current_labels = np.asarray(current_labels)
+
+            # Getting all the clusters numbers
+            labels_idx = np.unique(current_labels)
+            # Changing it for every cluster
+            for idx_off, idx in enumerate(labels_idx):
+                idx = int(idx)
+                current_labels[current_labels == idx] = current_labels[current_labels == idx] - idx + idx_off
+
         current_axis = axs[floor(i/final_x)][i%final_x]
 
         color = cm.rainbow(np.linspace(0,1,len(np.unique(current_labels))))
 
-        if -1 in current_labels:
-            current_labels = current_labels + 1
-
         for j, pt in enumerate(pca_ed):
-            current_axis.plot(pt[0], pt[1], 'o', color=color[current_labels[j]])
 
-        current_axis.set_title(names[i])
+            # if the point has -1 as a label, it means that it's been considered
+            # as an outlier, so we display it in black
+            try:
+                current_color = color[current_labels[j]] if current_labels[j] != -1 else np.array([0, 0, 0])
+            except:
+                breakpoint()
+            current_axis.plot(pt[0], pt[1], 'o', color=current_color)
+
+            # The label of the point is added (data number)
+            current_axis.annotate(j, xy=(pt[0], pt[1]), color=luminance(color[current_labels[j]]), ha='center', va='center', fontsize=5)
+
+        current_axis.set_title(names[i] + ' (ss = ' + str(sss[i]) + ')')
+
+        # If it's an agglomerative clustering, we plot the dendrogram next to it
+        if names[i] == 'agglomerative':
+            i += 1
+            current_axis = axs[floor(i/final_x)][i%final_x]
+            current_axis.set_title('Previous ' + names[i-1] + ' dendrogram')
+            plot_dendrogram(models[i-1], ax=current_axis)
+
+        i += 1
 
     plt.show()
 
+
+def luminance(colour):
+    """
+        Compute the luminance of a colour, and return the adequate colour
+        to write on the initial one (black or white).
+    """
+    if (0.299 * colour[0] + 0.587 * colour[1] + 0.114 * colour[2]) > 0.5:
+        return np.array([0, 0, 0])
+
+    return np.array([1, 1, 1])
 
 def test():
     data = []
