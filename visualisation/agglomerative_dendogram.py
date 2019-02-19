@@ -34,7 +34,6 @@ def plot_dendrogram(model, **kwargs):
     dendrogram(linkage_matrix, **kwargs)
     plt.show()
 
-
 # iris = load_iris()
 # x = iris.data[:20]
 # model = AgglomerativeClustering(n_clusters=3)
