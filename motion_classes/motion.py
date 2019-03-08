@@ -20,7 +20,11 @@ class Motion():
 
     def get_joint_list(self):
         if self.datatypes:
-            return self.datatypes[list(self.datatypes.keys())[0]].get_joint_list()
+            joints_set = set()
+            for _, datatypes in self.datatypes.items():
+                for joint in datatypes.get_joint_list():
+                    joints_set.add(joint)
+            return list(joints_set)
         else:
             return None
 
@@ -70,6 +74,7 @@ class Motion():
 
         if passed == True:
             print('{} validated.'.format(self.name))
+
         return passed
 
 
