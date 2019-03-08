@@ -194,22 +194,44 @@ def test():
         print(valid)
 
 def darts_test():
-    path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/testBB/'
-    name = 'me'
-    original_data = import_data(path, [name])
-    joints = ['LeftArmLeftForeArmLeftHandLeftShoulder']
-    data = ['BoundingBoxMinusX', 'BoundingBoxPlusX',
-          'BoundingBoxMinusY', 'BoundingBoxPlusY',
-          'BoundingBoxMinusZ', 'BoundingBoxPlusZ']
+    path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/mixed'
+    name = 'Char'
+    original_data = import_data(path, name)
 
-    # original_data = original_data[0:30]
+    for motion in original_data:
+        if 'aurel' in motion.name:
+            motion.laterality = 'Right'
+        else:
+            motion.laterality = 'Left'
+
+    datatype_joints =  {'BoundingBoxMinusX': [{'joint':'RightArmRightForeArmRightHandRightShoulder', 'laterality':True}],
+                        'BoundingBoxPlusX': [{'joint':'RightArmRightForeArmRightHandRightShoulder', 'laterality':True}],
+                        'BoundingBoxMinusY': [{'joint':'RightArmRightForeArmRightHandRightShoulder', 'laterality':True}],
+                        'BoundingBoxPlusY': [{'joint':'RightArmRightForeArmRightHandRightShoulder', 'laterality':True}],
+                        'BoundingBoxMinusZ': [{'joint':'RightArmRightForeArmRightHandRightShoulder', 'laterality':True}],
+                        'BoundingBoxPlusZ': [{'joint':'RightArmRightForeArmRightHandRightShoulder', 'laterality':True}]}
+
+    # original_data = original_data[0:20]
+
+    # bad_data_points = [1,4,5,11,26,34,35,40,41,48,49]
+    # for i, nb in enumerate(bad_data_points):
+    #     original_data.pop(nb-i)
+
+    scale = False
+    normalise = False
 
     print(f'\n\nParameters estimation')
-    dbscan_eps, dbscan_nb_min = find_optimal_dbscan_params(path, name, joints, data, original_data)
-    k_means_k = find_optimal_kmeans_k(path, name, joints, data, original_data)
-    gmm_components = find_optimal_gmm_components(path, name, joints, data, original_data)
-    agglo_n = find_optimal_agglomerative_n(path, name, joints, data, original_data)
-    mean_shift_quantile = find_optimal_mean_shift_bw(path, name, joints, data, original_data)
+    dbscan_eps, dbscan_nb_min = find_optimal_dbscan_params(path, name, datatype_joints, original_data, scale, normalise)
+    k_means_k = find_optimal_kmeans_k(path, name, datatype_joints, original_data, scale, normalise)
+    gmm_components = find_optimal_gmm_components(path, name, datatype_joints, original_data, scale, normalise)
+    agglo_n = find_optimal_agglomerative_n(path, name, datatype_joints, original_data, scale, normalise)
+    mean_shift_quantile = find_optimal_mean_shift_bw(path, name, datatype_joints, original_data, scale, normalise)
+
+    # dbscan_eps = 0.5
+    # dbscan_nb_min = 2
+    # k_means_k = 2
+    # gmm_components = 2
+    # agglo_n = 2
 
     algos = {'k-means': {'n_clusters': k_means_k},
              'dbscan': {'eps': dbscan_eps, 'min_samples': dbscan_nb_min},
@@ -226,53 +248,72 @@ def darts_test():
     print(f'\n\nRunning algorithms with estimated parameters')
     for algo, param in algos.items():
         res = run_clustering(path, original_data, name, validate_data=False,
-                               joint_to_use=joints, data_to_select=data, algorithm=algo,
-                               parameters=param, true_labels=None, verbose=False, to_file=True,
-                               to_json=True, display_graph=False, save_graph=False,
-                               data_to_graph=None, only_success=False, return_data=True)
+                               datatype_joints=datatype_joints, algorithm=algo,
+                               parameters=param, scale_features=scale, normalise_features=normalise,
+                               true_labels=None, verbose=False, to_file=True, to_json=True, return_data=True)
 
         models.append(res[0])
         print('\n')
         print(f'{algo} with {param}: {res[0].labels_}')
+
         if 'ss' in res[1]:
             print(f'Silhouette Score: {res[1]["ss"]}')
             sss.append(f'{res[1]["ss"]:.2f}')
-            names.append(algo)
-            labels.append(res[0].labels_)
-            features.append(res[2])
         else:
             print(f'No ss')
+            sss.append(f'0.00')
 
+        names.append(algo)
+        labels.append(res[0].labels_)
+        features.append(res[2])
     # ---------------------------------------------- #
     #  Adding the Ground Truth for display purposes  #
     # ---------------------------------------------- #
+    labels_gt = dl.MIXED_LABELS
+    # for i, nb in enumerate(bad_data_points):
+    #     labels_gt.pop(nb-i)
+
     features.insert(0, features[0])
-    labels.insert(0, dl.FAKE_DARTS_LABELS)
+    labels.insert(0, labels_gt)
     names.insert(0, 'Ground Truth')
     models.insert(0, None)
-    sss.insert(0, 1)
+    sss.insert(0, "None")
     # ---------------------------------------------- #
+    title = "Forced parameters/scaled/MeanSpeed/Shoulders"
 
-    title = '4 classes: correct, left, right, wild'
+
     multi_plot_PCA(features, labels, names, models, sss, title)
 
 
-def find_optimal_dbscan_params(path, name, joints, data, original_data):
+def darts_all_data():
+    return {'BoundingBoxMinusX': 'RightArmRightForeArmRightHandRightShoulder',
+            'BoundingBoxPlusX': 'RightArmRightForeArmRightHandRightShoulder',
+            'BoundingBoxMinusY': 'RightArmRightForeArmRightHandRightShoulder',
+            'BoundingBoxPlusY': 'RightArmRightForeArmRightHandRightShoulder',
+            'BoundingBoxMinusZ': 'RightArmRightForeArmRightHandRightShoulder',
+            'BoundingBoxPlusZ': 'RightArmRightForeArmRightHandRightShoulder',
+            'MeanSpeed': ['RightShoulder', 'RightForeArm'],
+            'PosX': ['RightHand', 'Head'],
+            'PosY': ['RightHand', 'Head'],
+            'PosZ': ['RightHand', 'Head']}
 
-    eps = 0
+def find_optimal_dbscan_params(path, name, datatype_joints, original_data, scale=False, normalise=False):
+
+    eps = 1
     ss_s = 0
-    nb_min= 0
+    nb_min= 1
     labels = []
 
     features = []
 
-    for i in range(2,34):
+    for i in range(1,50):
         for j in range(1,len(original_data)-1):
             res = run_clustering(path, original_data, name, validate_data=False,
-                                 joint_to_use=joints, data_to_select=data, algorithm='dbscan',
-                                 parameters={'eps': i/2, 'min_samples': j}, true_labels=None, verbose=False, to_file=True,
-                                 to_json=True, display_graph=False, save_graph=False,
-                                 data_to_graph=None, only_success=False, return_data=True)
+                                 datatype_joints=datatype_joints, algorithm='dbscan',
+                                 parameters={'eps': i/50, 'min_samples': j},
+                                 scale_features=scale, normalise_features=normalise,
+                                 true_labels=None, verbose=False, to_file=True,
+                                 to_json=True, return_data=True)
 
             if 'ss' in res[1]:
                 ssres = res[1]['ss']
@@ -291,7 +332,7 @@ def find_optimal_dbscan_params(path, name, joints, data, original_data):
     return eps, nb_min
 
 
-def find_optimal_kmeans_k(path, name, joints, data, original_data):
+def find_optimal_kmeans_k(path, name, datatype_joints, original_data, scale=False, normalise=False):
 
     nb_clusters = 0
     ss_s = 0
@@ -301,10 +342,11 @@ def find_optimal_kmeans_k(path, name, joints, data, original_data):
 
     for i in range(2, ceil(len(original_data)/2)):
         res = run_clustering(path, original_data, name, validate_data=False,
-                             joint_to_use=joints, data_to_select=data, algorithm='k-means',
-                             parameters={'n_clusters': i}, true_labels=None, verbose=False, to_file=True,
-                             to_json=True, display_graph=False, save_graph=False,
-                             data_to_graph=None, only_success=False, return_data=True)
+                             datatype_joints=datatype_joints, algorithm='k-means',
+                             parameters={'n_clusters': i},
+                             scale_features=scale, normalise_features=normalise,
+                             true_labels=None, verbose=False, to_file=True,
+                             to_json=True, return_data=True)
 
         if 'ss' in res[1]:
             ssres = res[1]['ss']
@@ -322,7 +364,7 @@ def find_optimal_kmeans_k(path, name, joints, data, original_data):
     return nb_clusters
 
 
-def find_optimal_gmm_components(path, name, joints, data, original_data):
+def find_optimal_gmm_components(path, name, datatype_joints, original_data, scale=False, normalise=False):
 
     n_components = 0
     ss_s = 0
@@ -332,10 +374,11 @@ def find_optimal_gmm_components(path, name, joints, data, original_data):
 
     for i in range(2, ceil(len(original_data)/2)):
         res = run_clustering(path, original_data, name, validate_data=False,
-                             joint_to_use=joints, data_to_select=data, algorithm='gmm',
-                             parameters={'n_components': i}, true_labels=None, verbose=False, to_file=True,
-                             to_json=True, display_graph=False, save_graph=False,
-                             data_to_graph=None, only_success=False, return_data=True)
+                             datatype_joints=datatype_joints, algorithm='gmm',
+                             parameters={'n_components': i},
+                             scale_features=scale, normalise_features=normalise,
+                             true_labels=None, verbose=False, to_file=True,
+                             to_json=True, return_data=True)
 
         if 'ss' in res[1]:
             ssres = res[1]['ss']
@@ -354,7 +397,7 @@ def find_optimal_gmm_components(path, name, joints, data, original_data):
     return n_components
 
 
-def find_optimal_agglomerative_n(path, name, joints, data, original_data):
+def find_optimal_agglomerative_n(path, name, datatype_joints, original_data, scale=False, normalise=False):
 
     best_n = 0
     ss_s = 0
@@ -364,10 +407,11 @@ def find_optimal_agglomerative_n(path, name, joints, data, original_data):
 
     for i in range(2, ceil(len(original_data)/2)):
         res = run_clustering(path, original_data, name, validate_data=False,
-                             joint_to_use=joints, data_to_select=data, algorithm='agglomerative',
-                             parameters={'n_clusters': i}, true_labels=None, verbose=False, to_file=True,
-                             to_json=True, display_graph=False, save_graph=False,
-                             data_to_graph=None, only_success=False, return_data=True)
+                             datatype_joints=datatype_joints, algorithm='agglomerative',
+                             parameters={'n_clusters': i},
+                             scale_features=scale, normalise_features=normalise,
+                             true_labels=None, verbose=False, to_file=True,
+                             to_json=True, return_data=True)
 
         if 'ss' in res[1]:
             ssres = res[1]['ss']
@@ -386,7 +430,7 @@ def find_optimal_agglomerative_n(path, name, joints, data, original_data):
     return best_n
 
 
-def find_optimal_mean_shift_bw(path, name, joints, data, original_data):
+def find_optimal_mean_shift_bw(path, name, datatype_joints, original_data, scale=False, normalise=False):
 
     bw = 0
     ss_s = 0
@@ -396,10 +440,11 @@ def find_optimal_mean_shift_bw(path, name, joints, data, original_data):
 
     for i in range(1, 20):
         res = run_clustering(path, original_data, name, validate_data=False,
-                             joint_to_use=joints, data_to_select=data, algorithm='mean-shift',
-                             parameters={'quantile': i/20}, true_labels=None, verbose=False, to_file=True,
-                             to_json=True, display_graph=False, save_graph=False,
-                             data_to_graph=None, only_success=False, return_data=True)
+                             datatype_joints=datatype_joints, algorithm='mean-shift',
+                             parameters={'quantile': i/20},
+                             scale_features=scale, normalise_features=normalise,
+                             true_labels=None, verbose=False, to_file=True,
+                             to_json=True, return_data=True)
 
         if 'ss' in res[1]:
             ssres = res[1]['ss']
@@ -418,6 +463,8 @@ def find_optimal_mean_shift_bw(path, name, joints, data, original_data):
     # plot_PCA(features, labels)
 
     return bw
+
+
 if __name__ == '__main__':
     # test()
     # main_all_together()
