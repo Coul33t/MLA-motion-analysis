@@ -8,6 +8,7 @@ Profiles/
 *.gml
 ex1/
 tmp_res/
+data/
 # ---------------------
 
 # Byte-compiled / optimized / DLL files
