@@ -460,10 +460,8 @@ def multi_plot_PCA(data, labels, names, models, sss, title=None):
 
             # if the point has -1 as a label, it means that it's been considered
             # as an outlier, so we display it in black
-            try:
-                current_color = color[current_labels[j]] if current_labels[j] != -1 else np.array([0, 0, 0])
-            except:
-                breakpoint()
+            current_color = color[current_labels[j]] if current_labels[j] != -1 else np.array([0, 0, 0])
+
             current_axis.plot(pt[0], pt[1], 'o', color=current_color)
 
             # The label of the point is added (data number)
