@@ -135,10 +135,20 @@ def json_specific_import(folder_path, file_list):
     """
     full_data = []
 
+    if isinstance(file_list, str):
+        file_list = [file_list]
+
     for file in file_list:
         motion = Motion(name=file)
-        motion.pre_processing_info = json.load(open(folder_path + '/' + file + '/' + 'motion_information.json'))
-        motion.post_processing_info = json.load(open(folder_path + '/' + file + '/' + 'segmentation_information.json'))
+        try:
+            motion.pre_processing_info = json.load(open(folder_path + '/' + file + '/' + 'motion_information.json'))
+        except FileNotFoundError:
+            pass
+
+        try:
+            motion.post_processing_info = json.load(open(folder_path + '/' + file + '/' + 'segmentation_information.json'))
+        except FileNotFoundError:
+            pass
 
         with open(folder_path + '/' + file + '/data/' + file + '.json', 'r') as f:
             json_file = json.load(f)
