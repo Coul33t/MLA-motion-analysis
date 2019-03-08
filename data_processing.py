@@ -12,6 +12,7 @@ import pdb
 import numpy as np
 
 from sklearn.cluster import estimate_bandwidth
+from sklearn.preprocessing import RobustScaler, MinMaxScaler
 
 # Personnal packages
 from tools import (flatten_list,
@@ -51,6 +52,8 @@ from data_visualization import (plot_data_k_means,
                                 plot_data_sub_k_means,
                                 simple_plot_2d,
                                 simple_plot_2d_2_curves)
+
+from data_selection import data_gathering
 
 # Results class
 from results_analysing import Results
@@ -561,10 +564,9 @@ def test_full_batch_k_var(path, original_data, name, validate_data=False,
                           x_label='k value', y_label=data_to_graph)
 
 def run_clustering(path, original_data, name, validate_data=False,
-                   joint_to_use=None, data_to_select=None, algorithm='k-means',
-                   parameters={}, true_labels=None, verbose=False, to_file=True,
-                   to_json=True, display_graph=False, save_graph=False,
-                   data_to_graph=None, only_success=False, return_data=False):
+                   datatype_joints=None, algorithm='k-means',
+                   parameters={}, scale_features=False, normalise_features=False,
+                   true_labels=None, verbose=False, to_file=True, to_json=True, return_data=False):
 
     """
         This function run a k-means algorithm with varying k values,
@@ -575,72 +577,51 @@ def run_clustering(path, original_data, name, validate_data=False,
         print(f'ERROR: {algorithm} not implemented (yet).')
         return
 
-    # To extract the succesful motion only, we need the ground truth with c = 2
-    # (c0 = failure, c1 = success)
-    if only_success and (not true_labels or len(set(true_labels)) != 2):
-        print('ERROR: must have true labels with c=2 to extract the succesful motions only.')
-        return
-
-    if (display_graph or save_graph) and not data_to_graph:
-        print('ERROR: no data specified for graph output.')
-        return
-
     if validate_data:
         for motion in original_data:
             motion.validate_motion()
 
     # If there's no specific datatype defined, we take all the data available
-    if not data_to_select:
-        data_to_select = set([name for motion in original_data for name in motion.datatypes])
+    # if not data_to_select:
+    #     data_to_select = set([name for motion in original_data for name in motion.datatypes])
 
     if verbose:
         print('\nData used: {}'.format(data_to_select))
 
     # If there's no joint to select, then we take all of them
-    if joint_to_use is None:
-        joint_to_use = original_data[0].get_joint_list()
+    # if joint_to_use is None:
+    #     joint_to_use = original_data[0].get_joint_list()
 
     if verbose:
         print('Joints used: {}\n'.format(joint_to_use))
 
-    # This dict will contain each joint as a key, and for each
-    # joint, a list of list, [nb_cluster, inertia]
-    # Since Python 3.7, no need to use OrderedDict to preserve
-    # insertion order
-    res_k = {}
-
-    # Initialising
-    for joint in joint_to_use:
-        # If it's a combination of joints
-        if isinstance(joint, list):
-            res_k[','.join(joint)] = []
-        else:
-            res_k[joint] = []
-
     results = Results()
-
-    if isinstance(joint_to_use, list):
-        joint_to_use = ','.join(joint_to_use)
 
     # We keep the joints' data we're interested in
     # (from the motion class)
-    selected_data = joint_selection(original_data, joint_to_use)
+    # selected_data = joint_selection(original_data, joint_to_use)
 
     # We select the data we want and we put them in the right shape
     # for the algorithm
     # [sample1[f1, f2, ...], sample2[f1, f2, f3...], ...]
-    features = data_selection(selected_data, data_to_select)
+    # features = data_selection(selected_data, data_to_select)
 
-    # If we only work with the succesful motions,
-    # we only keep these ones (c == 1 for success)
-    if only_success:
-        features = features[(np.asarray(true_labels) == 1)]
+    features = data_gathering(original_data, datatype_joints)
 
     # Compute the euclidean distance between each sample
     # (Unused in this version)
     # d_m = distance_matrix_computing(features)
     #
     # c_res = compute_mean_std(d_m, GLOUP_SUCCESS, natural_indexes=True)
+
+    if (scale_features):
+        scaler = RobustScaler()
+        features = scaler.fit_transform(features)
+
+    if (normalise_features):
+        min_max_scaler = MinMaxScaler()
+        features = min_max_scaler.fit_transform(features)
+
 
     params = check_algo_parameters(algorithm, parameters)
 
@@ -674,15 +655,16 @@ def run_clustering(path, original_data, name, validate_data=False,
     # to the number of clusters in the ground truth
     # If we're working only with the success, we have no ground truth
     # so we can't compute these scores
-    if not only_success and true_labels and k == len(np.unique(true_labels)):
+    if true_labels and k == len(np.unique(true_labels)):
         metrics.update(compute_all_gt_metrics(res.labels_, true_labels))
 
     metrics.update(compute_all_clustering_metrics(features, res.labels_))
 
+    # Features are returned to be plotted
     if return_data:
-        return(res, metrics, features)
+        return[res, metrics, features]
 
-    return (res, metrics)
+    return [res, metrics]
 
 def clusters_composition(labels, true_labels, sample_nb, verbose=False):
     """
