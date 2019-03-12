@@ -11,6 +11,9 @@ from data_import import json_import
 from data_processing import (run_clustering,
                              data_gathering)
 
+from data_visualization import (plot_PCA,
+                                multi_plot_PCA)
+
 def import_data(path, import_find):
     original_data = []
 
@@ -31,17 +34,25 @@ def import_data(path, import_find):
 
 def feedback():
     path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/mixed'
+    # Expert Data
     name = 'aurel'
     expert_data = import_data(path, name)
+    # Student data
     name = 'me'
     student_data = import_data(path, name)
 
+    # Setting the laterality
     for motion in expert_data:
         motion.laterality = 'Right'
 
     for motion in student_data:
         motion.laterality = 'Left'
 
+    # List of datatypes and joint to process
+    # default to check: {Descriptor: [{joint, laterality or not (check left for lefthanded and vice versa)},
+    #                                  other joint, laterality or not}],
+    #                    Other descriptor: [{joint, laterality or not}]
+    #                   }
     datatype_joints_list =  []
 
     datatype_joints_list.append(['leaning', {'MeanSpeed': [{'joint': 'LeftShoulder', 'laterality': False},
@@ -70,44 +81,58 @@ def feedback():
 
 
 
-
+    # Scaling and normalisaing (nor not) the data
+    # Useful for DBSCAN for example
     scale = False
     normalise = False
 
+    # Setting the data repartition
     aurelien_data = {'good': [x+1 for x in range(10)],
                      'leaning': [x+1 for x in range(10,20)],
                      'javelin': [x+1 for x in range(20,30)],
                      'align_arm': [x+1 for x in range(30,40)],
                      'elbow_move': [x+1 for x in range(40,50)]}
 
+    # Algorithm to test
     algos = {'k-means': {'n_clusters': 2}}
-    distances_and_clusters = []
 
+    # Currently unused
+    distances_and_clusters = []
+    results = []
+    std_features_all = []
     for problem in datatype_joints_list:
         datatype_joints = problem[1]
-        expert_sub_data = expert_data[:10] + expert_data[min(aurelien_data[problem[0]])-1:max(aurelien_data[problem[0]])-1]
+        expert_sub_data = expert_data[:10] + expert_data[min(aurelien_data[problem[0]])-1:max(aurelien_data[problem[0]])]
 
+        # TODO: actually store the models (for now, model is overwritten)
         for algo, param in algos.items():
             print(problem[0])
+
             model = run_clustering(path, expert_sub_data, name, validate_data=False,
                                    datatype_joints=datatype_joints, algorithm=algo,
                                    parameters=param, scale_features=scale, normalise_features=normalise,
                                    true_labels=None, verbose=False, to_file=True, to_json=True, return_data=True)
 
 
+        # Taking the student features
         std_features = data_gathering(student_data, datatype_joints)
 
+        # If the expert data has been scaled, do the same for the student's ones
         if scale:
             from sklearn.preprocessing import RobustScaler
             scaler = RobustScaler()
             std_features = scaler.fit_transform(std_features)
+        # Same for normalising
         if normalise:
             from sklearn.preprocessing import MinMaxScaler
             min_max_scaler = MinMaxScaler()
             std_features = min_max_scaler.fit_transform(std_features)
 
+        # Compute the centroid of the student's features (Euclidean distance for now)
         std_centroid = get_centroid_student(std_features)
 
+        # For the rest of the algorithm, if there are more than 2 features,
+        # we run the data through a PCA for the next steps
         if len(model[0].cluster_centers_[0]) > 2:
             pca = PCA(n_components=2, copy=True)
             pca.fit(model[2])
@@ -117,19 +142,45 @@ def feedback():
             std_centroid = pca.transform(std_centroid.reshape(1, -1))[0]
             std_features = pca.transform(std_features)
 
+        # Compute the distance from the student's centroid to the expert's ones
+        distances_to_centroid = compute_distance(model[0].cluster_centers_, std_centroid)
 
-        distances_to_centroid = compute_distance(model[0].cluster_centers_, std_features)
-
+        # Get the distance from the student's centroid to the line between the two expert's centroids
         distance_from_line = get_distance_from_expert_centoids_line(model[0].cluster_centers_, std_centroid)
+        # Used to check if the student's centroid is between the expert centroids (diamond shape)
         distance_from_line /= (dst_pts(model[0].cluster_centers_[0], model[0].cluster_centers_[1]) / 2)
 
+        # Normalise the distances to the centroids
         summ = sum(distances_to_centroid)
         for i, distance in enumerate(distances_to_centroid):
             distances_to_centroid[i] = distance/summ
 
+        # Get the most probable cluster label for expert data
         clusters_label = get_cluster_label(expert_sub_data, aurelien_data, model[0].labels_)
+        # Display the closeness of the student's data to each expert cluster
         distances_and_clusters.append(mix(distances_to_centroid, clusters_label, distance_from_line))
 
+        results.append((model[0], model[2], model[0].labels_, model[1], problem[0], std_features))
+        std_features_all.append(std_features)
+
+    models = [x[0] for x in results]
+    features = [x[1] for x in results]
+
+    for i, feat in enumerate(features):
+        features[i] = np.concatenate([feat, std_features_all[i]], axis=0)
+
+    labels = [x[2] for x in results]
+
+    for i, lab in enumerate(labels):
+        max_val = max(lab)
+        labels[i] = np.concatenate([lab, [max_val+1 for x in range(len(std_features))]], axis=0)
+
+    sss = [x[3]['ss'] for x in results]
+    names = ['k-means ' + x[4] for x in results]
+    title = 'None'
+
+
+    multi_plot_PCA(features, labels, names, models, sss, title)
 
 
 def compute_distance(centroids, feature):
