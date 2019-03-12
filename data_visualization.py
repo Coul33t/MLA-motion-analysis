@@ -462,10 +462,10 @@ def multi_plot_PCA(data, labels, names, models, sss, title=None):
             # as an outlier, so we display it in black
             current_color = color[current_labels[j]] if current_labels[j] != -1 else np.array([0, 0, 0])
 
-            current_axis.plot(pt[0], pt[1], 'o', color=current_color)
+            current_axis.plot(pt[0], pt[1], 'o', color=current_color, markersize=10)
 
             # The label of the point is added (data number)
-            current_axis.annotate(j, xy=(pt[0], pt[1]), color=luminance(color[current_labels[j]]), ha='center', va='center', fontsize=5)
+            current_axis.annotate(j, xy=(pt[0], pt[1]), color=luminance(color[current_labels[j]]), ha='center', va='center', fontsize=7)
 
         current_axis.set_title(names[i] + ' (ss = ' + str(sss[i]) + ')')
 
