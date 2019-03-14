@@ -11,6 +11,7 @@ import numpy as np
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+import matplotlib.patches as patches
 
 from scipy.signal import (savgol_filter, savgol_coeffs,
                           correlate, butter, lfilter)
@@ -405,9 +406,17 @@ def plot_PCA(data, labels):
 
     plt.show()
 
-def multi_plot_PCA(data, labels, names, models, sss, title=None):
+def multi_plot_PCA(data, labels, names, models, sss, title=None, trapezoids=None, circles=None):
 
     size = len(data)
+
+    if trapezoids and len(trapezoids) != size:
+        print(f"ERROR: not enough trapezoids.")
+        return
+
+    if circles and len(circles) != size:
+        print(f"ERROR: not enough circles.")
+        return
 
     # More for dendrogram
     if 'agglomerative' in names:
@@ -431,9 +440,12 @@ def multi_plot_PCA(data, labels, names, models, sss, title=None):
     # While i instead of for i because of the dendrograms
     while i < (len(data)):
 
+        pca_ed = data[i]
         # A PCA is ran on the data to plot them in 2D
-        pca = PCA(n_components=2, copy=True)
-        pca_ed = pca.fit_transform(data[i])
+        if data[i].shape[1] > 2:
+            pca = PCA(n_components=2, copy=True)
+            pca_ed = pca.fit_transform(data[i])
+
 
         current_labels = labels[i]
 
@@ -456,6 +468,16 @@ def multi_plot_PCA(data, labels, names, models, sss, title=None):
 
         color = cm.rainbow(np.linspace(0,1,len(np.unique(current_labels))))
 
+        if trapezoids:
+            patch = patches.PathPatch(trapezoids[i], facecolor='orange', lw=0)
+            current_axis.add_patch(patch)
+
+        if circles:
+            circle_1 = patches.Circle(circles[i][0]['center'], circles[i][0]['radius'], facecolor="green", lw=0)
+            current_axis.add_patch(circle_1)
+            circle_2 = patches.Circle(circles[i][1]['center'], circles[i][1]['radius'], facecolor="blue", lw=0)
+            current_axis.add_patch(circle_2)
+
         for j, pt in enumerate(pca_ed):
 
             # if the point has -1 as a label, it means that it's been considered
@@ -468,6 +490,12 @@ def multi_plot_PCA(data, labels, names, models, sss, title=None):
             current_axis.annotate(j, xy=(pt[0], pt[1]), color=luminance(color[current_labels[j]]), ha='center', va='center', fontsize=7)
 
         current_axis.set_title(names[i] + ' (ss = ' + str(sss[i]) + ')')
+        ax = current_axis.axis()
+        min_val = min(ax[0], ax[2])
+        max_val = max(ax[1], ax[3])
+        current_axis.set_xlim([min_val, max_val])
+        current_axis.set_ylim([min_val, max_val])
+
 
         # If it's an agglomerative clustering, we plot the dendrogram next to it
         if names[i] == 'agglomerative':

@@ -3,6 +3,9 @@ from math import floor, sqrt
 import operator
 
 import numpy as np
+from scipy.spatial import distance
+
+import matplotlib.path as mplPath
 
 from sklearn.decomposition import PCA
 
@@ -71,12 +74,12 @@ def feedback():
                                                       {'joint': 'Head',     'laterality': False}]
                                             }])
 
-    datatype_joints_list.append(['align_arm', {'BoundingBoxMinusX': [{'joint': 'RightArmRightForeArmRightHandRightShoulder', 'laterality': True}],
-                                               'BoundingBoxPlusX':  [{'joint': 'RightArmRightForeArmRightHandRightShoulder', 'laterality': True}],
-                                               'BoundingBoxMinusY': [{'joint': 'RightArmRightForeArmRightHandRightShoulder', 'laterality': True}],
-                                               'BoundingBoxPlusY':  [{'joint': 'RightArmRightForeArmRightHandRightShoulder', 'laterality': True}],
-                                               'BoundingBoxMinusZ': [{'joint': 'RightArmRightForeArmRightHandRightShoulder', 'laterality': True}],
-                                               'BoundingBoxPlusZ':  [{'joint': 'RightArmRightForeArmRightHandRightShoulder', 'laterality': True}]
+    datatype_joints_list.append(['align_arm', {'BoundingBoxMinusX': [{'joint': 'RightShoulderRightArmRightForeArmRightHand', 'laterality': True}],
+                                               'BoundingBoxPlusX':  [{'joint': 'RightShoulderRightArmRightForeArmRightHand', 'laterality': True}],
+                                               'BoundingBoxMinusY': [{'joint': 'RightShoulderRightArmRightForeArmRightHand', 'laterality': True}],
+                                               'BoundingBoxPlusY':  [{'joint': 'RightShoulderRightArmRightForeArmRightHand', 'laterality': True}],
+                                               'BoundingBoxMinusZ': [{'joint': 'RightShoulderRightArmRightForeArmRightHand', 'laterality': True}],
+                                               'BoundingBoxPlusZ':  [{'joint': 'RightShoulderRightArmRightForeArmRightHand', 'laterality': True}]
                                               }])
 
 
@@ -96,15 +99,14 @@ def feedback():
     # Algorithm to test
     algos = {'k-means': {'n_clusters': 2}}
 
-    # Currently unused
     distances_and_clusters = []
     results = []
     std_features_all = []
+
     for problem in datatype_joints_list:
         datatype_joints = problem[1]
         expert_sub_data = expert_data[:10] + expert_data[min(aurelien_data[problem[0]])-1:max(aurelien_data[problem[0]])]
 
-        # TODO: actually store the models (for now, model is overwritten)
         for algo, param in algos.items():
             print(problem[0])
 
@@ -160,7 +162,7 @@ def feedback():
         # Display the closeness of the student's data to each expert cluster
         distances_and_clusters.append(mix(distances_to_centroid, clusters_label, distance_from_line))
 
-        results.append((model[0], model[2], model[0].labels_, model[1], problem[0], std_features))
+        results.append((model[0], model[2], model[0].labels_, model[1], problem[0], std_features, get_trapezoid(model, std_centroid), get_circle(model, std_centroid)))
         std_features_all.append(std_features)
 
     models = [x[0] for x in results]
@@ -169,18 +171,21 @@ def feedback():
     for i, feat in enumerate(features):
         features[i] = np.concatenate([feat, std_features_all[i]], axis=0)
 
+    centroids = [x[0].cluster_centers_ for x in results]
     labels = [x[2] for x in results]
 
     for i, lab in enumerate(labels):
         max_val = max(lab)
         labels[i] = np.concatenate([lab, [max_val+1 for x in range(len(std_features))]], axis=0)
 
+    trapezoids= [x[6] for x in results]
+    circles = [x[7] for x in results]
+
     sss = [x[3]['ss'] for x in results]
     names = ['k-means ' + x[4] for x in results]
     title = 'None'
 
-
-    multi_plot_PCA(features, labels, names, models, sss, title)
+    multi_plot_PCA(features, labels, names, models, sss, title, trapezoids, circles)
 
 
 def compute_distance(centroids, feature):
@@ -188,6 +193,33 @@ def compute_distance(centroids, feature):
 
 def dst_pts(pt1, pt2):
     return sqrt(pow(pt2[0] - pt1[0], 2) + pow(pt2[1] - pt1[1], 2))
+
+def get_trapezoid(result, point):
+    centroids = result[0].cluster_centers_
+    points = [result[2][np.where(result[0].labels_ == i)] for i in np.unique(result[0].labels_)]
+    max_dst = [max(max(distance.cdist([centroids[i]], cluster, 'euclidean'))) for i, cluster in enumerate(points)]
+
+    p1 = (centroids[0][0], centroids[0][1] + max_dst[0])
+    p4 = (centroids[0][0], centroids[0][1] - max_dst[0])
+    p2 = (centroids[1][0], centroids[1][1] + max_dst[1])
+    p3 = (centroids[1][0], centroids[1][1] - max_dst[1])
+
+    trapezoid = mplPath.Path(np.array([p1, p2, p3, p4]))
+    print(f"Point is in trapezoid: {trapezoid.contains_point(point)}")
+    return trapezoid
+
+def get_circle(result, point):
+    centroids = result[0].cluster_centers_
+    points = [result[2][np.where(result[0].labels_ == i)] for i in np.unique(result[0].labels_)]
+    max_dst = [max(max(distance.cdist([centroids[i]], cluster, 'euclidean'))) for i, cluster in enumerate(points)]
+
+
+    is_in_cluster = np.linalg.norm(centroids[0]-point) < max_dst[0]
+    if not is_in_cluster:
+        is_in_cluster = np.linalg.norm(centroids[1]-point) < max_dst[1]
+
+    print(f"Point is in a cluster: {is_in_cluster}")
+    return ({'center': centroids[0], 'radius':max_dst[0]}, {'center': centroids[1], 'radius':max_dst[1]})
 
 def get_cluster_label(original_data, original_labels, clustering_labels):
 
