@@ -406,7 +406,7 @@ def plot_PCA(data, labels):
 
     plt.show()
 
-def multi_plot_PCA(data, labels, names, models, sss, title=None, trapezoids=None, circles=None):
+def multi_plot_PCA(data, labels, clusters_names, names, models, sss, title=None, trapezoids=None, circles=None, only_centroids=False, centroids=None, std_data=None):
 
     size = len(data)
 
@@ -441,10 +441,22 @@ def multi_plot_PCA(data, labels, names, models, sss, title=None, trapezoids=None
     while i < (len(data)):
 
         pca_ed = data[i]
-        # A PCA is ran on the data to plot them in 2D
+        pca_ed_centroids = None
+        pca_ed_std_data = None
+
+        if centroids:
+            pca_ed_centroids = centroids[i]
+        if std_data:
+            pca_ed_std_data = std_data[i][0]
+
+        # A PCA is ran on the data to plot them in 2D if needed
         if data[i].shape[1] > 2:
             pca = PCA(n_components=2, copy=True)
             pca_ed = pca.fit_transform(data[i])
+            if centroids:
+                pca_ed_centroids = pca.fit_transform(centroids[i])
+            if std_data:
+                pca_ed_std_data = pca.fit_transform(std_data[i][0])
 
 
         current_labels = labels[i]
@@ -469,25 +481,52 @@ def multi_plot_PCA(data, labels, names, models, sss, title=None, trapezoids=None
         color = cm.rainbow(np.linspace(0,1,len(np.unique(current_labels))))
 
         if trapezoids:
-            patch = patches.PathPatch(trapezoids[i], facecolor='orange', lw=0)
+            patch = patches.PathPatch(trapezoids[i], facecolor='PaleGreen', lw=0)
             current_axis.add_patch(patch)
 
         if circles:
-            circle_1 = patches.Circle(circles[i][0]['center'], circles[i][0]['radius'], facecolor="green", lw=0)
-            current_axis.add_patch(circle_1)
-            circle_2 = patches.Circle(circles[i][1]['center'], circles[i][1]['radius'], facecolor="blue", lw=0)
-            current_axis.add_patch(circle_2)
+            if 'radius_max' in circles[i][0]:
+                circle_1_1 = patches.Circle(circles[i][0]['center'], circles[i][0]['radius_max'], facecolor="DarkMagenta", lw=0)
+                current_axis.add_patch(circle_1_1)
+            if 'radius_med' in circles[i][0]:
+                circle_1_2 = patches.Circle(circles[i][0]['center'], circles[i][0]['radius_med'], facecolor="DodgerBlue", lw=0)
+                current_axis.add_patch(circle_1_2)
+            if 'radius_min' in circles[i][0]:
+                circle_1_3 = patches.Circle(circles[i][0]['center'], circles[i][0]['radius_min'], facecolor="SkyBlue", lw=0)
+                current_axis.add_patch(circle_1_3)
 
-        for j, pt in enumerate(pca_ed):
+            if 'radius_max' in circles[i][1]:
+                circle_2_1 = patches.Circle(circles[i][1]['center'], circles[i][1]['radius_max'], facecolor="DarkMagenta", lw=0)
+                current_axis.add_patch(circle_2_1)
+            if 'radius_med' in circles[i][1]:
+                circle_2_2 = patches.Circle(circles[i][1]['center'], circles[i][1]['radius_med'], facecolor="DodgerBlue", lw=0)
+                current_axis.add_patch(circle_2_2)
+            if 'radius_min' in circles[i][1]:
+                circle_2_3 = patches.Circle(circles[i][1]['center'], circles[i][1]['radius_min'], facecolor="SkyBlue", lw=0)
+                current_axis.add_patch(circle_2_3)
 
-            # if the point has -1 as a label, it means that it's been considered
-            # as an outlier, so we display it in black
-            current_color = color[current_labels[j]] if current_labels[j] != -1 else np.array([0, 0, 0])
+        if not only_centroids:
+            for j, pt in enumerate(pca_ed):
 
-            current_axis.plot(pt[0], pt[1], 'o', color=current_color, markersize=10)
+                # if the point has -1 as a label, it means that it's been considered
+                # as an outlier, so we display it in black
+                current_color = color[current_labels[j]] if current_labels[j] != -1 else np.array([0, 0, 0])
 
-            # The label of the point is added (data number)
-            current_axis.annotate(j, xy=(pt[0], pt[1]), color=luminance(color[current_labels[j]]), ha='center', va='center', fontsize=7)
+                current_axis.plot(pt[0], pt[1], 'o', color=current_color, markersize=10)
+
+                # The label of the point is added (data number)
+                current_axis.annotate(j, xy=(pt[0], pt[1]), color=luminance(color[current_labels[j]]), ha='center', va='center', fontsize=7)
+
+        else:
+            for j, centroid in enumerate(pca_ed_centroids):
+                current_color = color[current_labels[j]]
+                current_axis.plot(centroid[0], centroid[1], 'o', color=current_color, markersize=10)
+            for j, std_pt in enumerate(pca_ed_std_data):
+                current_color = (0,0,0)
+                current_axis.plot(std_pt[0], std_pt[1], 'o', color=current_color, markersize=10)
+                current_axis.annotate(j, xy=(std_pt[0], std_pt[1]), color=luminance(current_color), ha='center', va='center', fontsize=7)
+
+
 
         current_axis.set_title(names[i] + ' (ss = ' + str(sss[i]) + ')')
         ax = current_axis.axis()
@@ -508,6 +547,91 @@ def multi_plot_PCA(data, labels, names, models, sss, title=None, trapezoids=None
 
     plt.show()
 
+def plot_all_defaults(clustering_problems, only_centroids=False, title="Yo"):
+    # Computing the needed space for plotting
+    size = len(clustering_problems)
+
+    final_x = 0
+
+    for i in range(10):
+        if pow(i,2) < size:
+            final_x += 1
+
+    final_y = ceil(size / final_x)
+
+    fig, axs = plt.subplots(final_y, final_x, sharex=False, sharey=False)
+
+    fig.suptitle(title, fontsize=30)
+
+    for i, clustering_prob in enumerate(clustering_problems):
+        pca_ed_data = clustering_prob.features
+        pca_ed_centroids = clustering_prob.centroids
+        pca_ed_std_data = clustering_prob.std_data
+
+        if clustering_prob.features.shape[1] > 2:
+            pca = PCA(n_components=2, copy=True)
+            pca_ed_data = pca.fit_transform(clustering_prob.features)
+            pca_ed_centroids = pca.fit_transform(clustering_prob.centroids)
+            pca_ed_std_data = pca.fit_transform(clustering_prob.std_data)
+
+        current_axis = axs[floor(i/final_x)][i%final_x]
+
+        if clustering_prob.trapezoids:
+            patch = patches.PathPatch(clustering_prob.trapezoids, facecolor='PaleGreen', lw=0)
+            current_axis.add_patch(patch)
+
+        if clustering_prob.circles:
+            for i, circle in enumerate(clustering_prob.circles):
+                if circle['is_good']:
+                    c1 = 'DarkMagenta'
+                    c2 = 'DodgerBlue'
+                    c3 = 'SkyBlue'
+                else:
+                    c1 = 'LightSalmon'
+                    c2 = 'IndianRed'
+                    c3 = 'Crimson'
+
+                circle_to_draw = patches.Circle(circle['center'], circle['radius_max'], facecolor=c1, lw=0)
+                current_axis.add_patch(circle_to_draw)
+                circle_to_draw = patches.Circle(circle['center'], circle['radius_med'], facecolor=c2, lw=0)
+                current_axis.add_patch(circle_to_draw)
+                circle_to_draw = patches.Circle(circle['center'], circle['radius_min'], facecolor=c3, lw=0)
+                current_axis.add_patch(circle_to_draw)
+
+        c_good = 'Green'
+        c_bad = 'BlueViolet'
+
+        if not only_centroids:
+            for j, pt in enumerate(pca_ed_data):
+
+                current_color = c_good
+                #if clustering_prob.labels[j]
+
+                current_axis.plot(pt[0], pt[1], 'o', color=current_color, markersize=10)
+
+                # The label of the point is added (data number)
+                current_axis.annotate(j, xy=(pt[0], pt[1]), color=luminance(current_color), ha='center', va='center', fontsize=7)
+
+        else:
+            for j, centroid in enumerate(pca_ed_centroids):
+                current_color = c_good
+                current_axis.plot(centroid[0], centroid[1], 'o', color=current_color, markersize=10)
+            for j, std_pt in enumerate(pca_ed_std_data):
+                current_color = (0,0,0)
+                current_axis.plot(std_pt[0], std_pt[1], 'o', color=current_color, markersize=10)
+                current_axis.annotate(j, xy=(std_pt[0], std_pt[1]), color=luminance(current_color), ha='center', va='center', fontsize=7)
+
+
+
+        current_axis.set_title(clustering_prob.algo_name + ' (ss = ' + str(clustering_prob.sil_score) + ')')
+        ax = current_axis.axis()
+        min_val = min(ax[0], ax[2])
+        max_val = max(ax[1], ax[3])
+        current_axis.set_xlim([min_val, max_val])
+        current_axis.set_ylim([min_val, max_val])
+
+
+    plt.show()
 
 def luminance(colour):
     """
