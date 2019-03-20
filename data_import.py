@@ -161,5 +161,4 @@ def json_specific_import(folder_path, file_list):
 
 
 if __name__ == '__main__':
-    data = adhoc_gathering(r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Test_Python')
-    pdb.set_trace()
+    breakpoint()
