@@ -1,5 +1,6 @@
 from math import floor, sqrt
 
+from dataclasses import dataclass
 import operator
 
 import numpy as np
@@ -18,11 +19,30 @@ from data_visualization import (plot_PCA,
                                 multi_plot_PCA,
                                 plot_all_defaults)
 
+@dataclass
+class Circle:
+    def __init__(self, center, radius, limits=None):
+        self.center = center
+        self.radius = radius
+        self.limits = limits
+        # TODO: add limits check
+
+@dataclass
+class Trapezoid:
+    def __init__(self, p1, p2, p3, p4, path=None):
+        self.p1 = p1
+        self.p2 = p2
+        self.p3 = p3
+        self.p4 = p4
+        self.path = path
+        if not self.path:
+            self.path = mplPath.Path(np.array([p1, p2, p3, p4]))
+
 class ClusteringProblem:
     def __init__(self, model=None, features=None, centroids=None,
                  labels=None, sil_score=None, algo_name=None,
                  clusters_names=None, std_data=None, std_centroid=None,
-                 trapezoids=None, circles=None):
+                 trapezoid=None, circles=None, distance_to_line=None):
         self.model = model
         self.features = features
         self.centroids = centroids
@@ -34,8 +54,10 @@ class ClusteringProblem:
         self.std_data = std_data
         self.std_centroid = std_centroid
 
-        self.trapezoids = trapezoids
+        self.trapezoid = trapezoid
         self.circles = circles
+
+        self.distance_to_line = distance_to_line
 
 def import_data(path, import_find):
     original_data = []
@@ -234,8 +256,11 @@ def get_trapezoid(result, point):
     p3 = (centroids[1][0], centroids[1][1] - max_dst[1])
 
     trapezoid = mplPath.Path(np.array([p1, p2, p3, p4]))
-    print(f"Point is in trapezoid: {trapezoid.contains_point(point)}")
+    print(f"Point is in trapezoid: {is_in_trapezoid(point, trapezoid)}")
     return trapezoid
+
+def is_in_trapezoid(point, trapezoid):
+    return trapezoid.contains_point(point)
 
 def get_circle(result, point):
     centroids = result[0].cluster_centers_
@@ -251,13 +276,16 @@ def get_circle(result, point):
 
     med_dst = [intra_cluster_dst(centroid, points[i]) for i, centroid in enumerate(centroids)]
 
-    is_in_cluster = np.linalg.norm(centroids[0]-point) < max_dst[0]
+    is_in_cluster = is_in_circle(point, centroids[0], max_dst[0])
     if not is_in_cluster:
-        is_in_cluster = np.linalg.norm(centroids[1]-point) < max_dst[1]
+        is_in_cluster = is_in_circle(point, centroids[1], max_dst[1])
 
     print(f"Point is in a cluster: {is_in_cluster}")
     return ({'center': centroids[0], 'radius_max':max_dst[0], 'radius_med':(max_dst[0] + med_dst[0]) / 2, 'radius_min':med_dst[0], 'is_good':is_good},
             {'center': centroids[1], 'radius_max':max_dst[1], 'radius_med':(max_dst[1] + med_dst[1]) / 2, 'radius_min':med_dst[1], 'is_good':not(is_good)})
+
+def is_in_circle(point, centroid, diameter):
+    return np.linalg.norm(point - centroid) < diameter
 
 def get_cluster_label(original_data, original_labels, clustering_labels):
 
@@ -463,9 +491,10 @@ def only_feedback():
                                      clusters_names=clusters_names,
                                      algo_name=problem[0],
                                      std_data=std_features,
-                                     std_centroid=get_centroid_student(std_features))
+                                     std_centroid=get_centroid_student(std_features),
+                                     distance_to_line=distance_from_line)
 
-        clus_prob.trapezoids = get_trapezoid(model, std_centroid)
+        clus_prob.trapezoid = get_trapezoid(model, std_centroid)
         clus_prob.circles = get_circle(model, std_centroid)
         clus_prob.clusters_names = mix_res[0]
         clus_prob.std_data = std_features
@@ -476,13 +505,10 @@ def only_feedback():
 
 def get_cluster_labels_from_data_repartition(labels):
     sublabels = list(labels[0:10])
-    print(sublabels)
 
     if sublabels.count(0) > sublabels.count(1):
-        print('good, bad')
         return ('good', 'bad')
     else:
-        print('bad, good')
         return ('bad', 'good')
 
 
