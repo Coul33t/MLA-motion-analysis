@@ -547,7 +547,7 @@ def multi_plot_PCA(data, labels, clusters_names, names, models, sss, title=None,
 
     plt.show()
 
-def plot_all_defaults(clustering_problems, only_centroids=False, title="Yo"):
+def plot_all_defaults(clustering_problems, only_centroids=False, title="Apprenant VS expert"):
     # Computing the needed space for plotting
     size = len(clustering_problems)
 
@@ -576,8 +576,8 @@ def plot_all_defaults(clustering_problems, only_centroids=False, title="Yo"):
 
         current_axis = axs[floor(i/final_x)][i%final_x]
 
-        if clustering_prob.trapezoids:
-            patch = patches.PathPatch(clustering_prob.trapezoids, facecolor='PaleGreen', lw=0)
+        if clustering_prob.trapezoid:
+            patch = patches.PathPatch(clustering_prob.trapezoid, facecolor='PaleGreen', lw=0)
             current_axis.add_patch(patch)
 
         if clustering_prob.circles:
@@ -623,7 +623,7 @@ def plot_all_defaults(clustering_problems, only_centroids=False, title="Yo"):
 
 
 
-        current_axis.set_title(clustering_prob.algo_name + ' (ss = ' + str(clustering_prob.sil_score) + ')')
+        current_axis.set_title(clustering_prob.algo_name)
         ax = current_axis.axis()
         min_val = min(ax[0], ax[2])
         max_val = max(ax[1], ax[3])
