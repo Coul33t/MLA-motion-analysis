@@ -577,12 +577,12 @@ def plot_all_defaults(clustering_problems, only_centroids=False, title="Apprenan
         current_axis = axs[floor(i/final_x)][i%final_x]
 
         if clustering_prob.trapezoid:
-            patch = patches.PathPatch(clustering_prob.trapezoid, facecolor='PaleGreen', lw=0)
+            patch = patches.PathPatch(clustering_prob.trapezoid.path, facecolor='PaleGreen', lw=0)
             current_axis.add_patch(patch)
 
         if clustering_prob.circles:
             for i, circle in enumerate(clustering_prob.circles):
-                if circle['is_good']:
+                if circle.is_good:
                     c1 = 'DarkMagenta'
                     c2 = 'DodgerBlue'
                     c3 = 'SkyBlue'
@@ -591,11 +591,11 @@ def plot_all_defaults(clustering_problems, only_centroids=False, title="Apprenan
                     c2 = 'IndianRed'
                     c3 = 'Crimson'
 
-                circle_to_draw = patches.Circle(circle['center'], circle['radius_max'], facecolor=c1, lw=0)
+                circle_to_draw = patches.Circle(circle.center, circle.limits['radius_max'], facecolor=c1, lw=0)
                 current_axis.add_patch(circle_to_draw)
-                circle_to_draw = patches.Circle(circle['center'], circle['radius_med'], facecolor=c2, lw=0)
+                circle_to_draw = patches.Circle(circle.center, circle.limits['radius_med'], facecolor=c2, lw=0)
                 current_axis.add_patch(circle_to_draw)
-                circle_to_draw = patches.Circle(circle['center'], circle['radius_min'], facecolor=c3, lw=0)
+                circle_to_draw = patches.Circle(circle.center, circle.limits['radius_min'], facecolor=c3, lw=0)
                 current_axis.add_patch(circle_to_draw)
 
         c_good = 'Green'

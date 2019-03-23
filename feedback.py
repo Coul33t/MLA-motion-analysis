@@ -21,11 +21,12 @@ from data_visualization import (plot_PCA,
 
 @dataclass
 class Circle:
-    def __init__(self, center, radius, limits=None):
+    def __init__(self, center, radius, limits=None, is_good=False):
         self.center = center
         self.radius = radius
         self.limits = limits
         # TODO: add limits check
+        self.is_good=is_good
 
 @dataclass
 class Trapezoid:
@@ -255,8 +256,9 @@ def get_trapezoid(result, point):
     p2 = (centroids[1][0], centroids[1][1] + max_dst[1])
     p3 = (centroids[1][0], centroids[1][1] - max_dst[1])
 
-    trapezoid = mplPath.Path(np.array([p1, p2, p3, p4]))
-    print(f"Point is in trapezoid: {is_in_trapezoid(point, trapezoid)}")
+    trapezoid = Trapezoid(p1, p2, p3, p4)
+    # trapezoid = mplPath.Path(np.array([p1, p2, p3, p4]))
+    print(f"Point is in trapezoid: {is_in_trapezoid(point, trapezoid.path)}")
     return trapezoid
 
 def is_in_trapezoid(point, trapezoid):
@@ -280,9 +282,10 @@ def get_circle(result, point):
     if not is_in_cluster:
         is_in_cluster = is_in_circle(point, centroids[1], max_dst[1])
 
+    circle_good = Circle(centroids[0], max_dst[0], limits={'center': centroids[0], 'radius_max':max_dst[0], 'radius_med':(max_dst[0] + med_dst[0]) / 2, 'radius_min':med_dst[0]}, is_good=is_good)
+    circle_bad = Circle(centroids[1], max_dst[1], limits={'center': centroids[1], 'radius_max':max_dst[1], 'radius_med':(max_dst[1] + med_dst[1]) / 2, 'radius_min':med_dst[1]}, is_good=not(is_good))
     print(f"Point is in a cluster: {is_in_cluster}")
-    return ({'center': centroids[0], 'radius_max':max_dst[0], 'radius_med':(max_dst[0] + med_dst[0]) / 2, 'radius_min':med_dst[0], 'is_good':is_good},
-            {'center': centroids[1], 'radius_max':max_dst[1], 'radius_med':(max_dst[1] + med_dst[1]) / 2, 'radius_min':med_dst[1], 'is_good':not(is_good)})
+    return (circle_good, circle_bad)
 
 def is_in_circle(point, centroid, diameter):
     return np.linalg.norm(point - centroid) < diameter
