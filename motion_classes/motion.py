@@ -36,20 +36,19 @@ class Motion():
             return self.datatypes[name]
 
     def validate_motion(self):
-        print('Validating {}...'.format(self.name))
-        passed = True
+        print(f'Validating {self.name}...')
 
         if self.name == 'NONE':
             print('Motion has name NONE.')
-            passed = False
+            return False
 
         if not self.pre_processing_info:
             print('Pre-processing information is empty.')
-            passed = False
+            return False
 
         if not self.post_processing_info:
             print('Post-processing information is empty.')
-            passed = False
+            return False
 
         sorted_joint_list = sorted(self.pre_processing_info['joints names'])
 
@@ -65,16 +64,14 @@ class Motion():
                     datatype_joint_list.append(joint_datatype)
 
                     if None in self.datatypes[datatype].get_joint_values(joint_datatype):
-                        print('Joint {} from datatype {} has None value.'.format(joint_datatype, datatype))
-                        passed = False
+                        print(f'Joint {joint_datatype} from datatype {datatype} has None value.')
+                        return False
 
                 if sorted_joint_list != sorted(datatype_joint_list):
-                    print('Some joints are different between original motion and datatype {}.'.format(datatype))
-                    passed = False
+                    print(f'Some joints are different between original motion and datatype {datatype}.')
+                    return False
 
-        if passed == True:
-            print('{} validated.'.format(self.name))
-
-        return passed
+        print(f'{self.name} validated.')
+        return True
 
 
