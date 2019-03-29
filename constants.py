@@ -111,3 +111,14 @@ data_types_corres = {'BegMaxEndSpeedNorm_BegMaxEndSpeedx_BegMaxEndSpeedy_BegMaxE
                      'Acceleration': 'Acc'}
 
 data_types_base_name = ['BegMaxEndSpeed', 'Speed', 'Acceleration']
+
+
+problems_and_advices = {'leaning': "Your shoulders shouldn't move when you're throwing.",
+                        'javelin': "Your throwing hand should always be in front of you when you're throwing.",
+                        'align_arm': "Your arm should stay aligned regarding to your body.",
+                        'elbow_move': "Your elbow shouldn't move while you're throwing."}
+
+problemes_et_solutions = {'leaning': "Votre corps et vos épaules ne doivent pas bouger pendant votre lancer.",
+                          'javelin': "Votre main doit toujours rester devant votre corps lorsque vous lancez.",
+                          'align_arm': "Votre bras doit rester aligné (de la main à l'épaule) lorsque vous lancez.",
+                          'elbow_move': "Votre coude ne doit pas bouger lors du lancer."}
