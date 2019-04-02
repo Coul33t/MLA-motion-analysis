@@ -5,13 +5,13 @@ def affinity_propagation_algo(data, verbose=False):
 
     # Which affinity to use
     algo = 'affinity'
-        
-    accuracy = []
-    
-    if verbose:
-        print("\n\n{}\n".format(algo))            
 
-    res = AffinityPropagation().fit(list(data))
+    accuracy = []
+
+    if verbose:
+        print("\n\n{}\n".format(algo))
+
+    res = AffinityPropagation().fit_transform(list(data))
 
     true_labels = [0,0,1,0,0,     0,0,0,0,1,      1,0,0,0,0,      0,1,1,0,1]
 
@@ -20,7 +20,7 @@ def affinity_propagation_algo(data, verbose=False):
         diff.append(abs(true_labels[i]-res.labels_[i]))
 
     accuracy.append(max(diff.count(0)/len(diff), diff.count(1)/len(diff)))
-    
+
     if verbose:
         print('Done.')
 
