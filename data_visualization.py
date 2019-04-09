@@ -12,6 +12,7 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.patches as patches
+from matplotlib import colors
 
 from scipy.signal import (savgol_filter, savgol_coeffs,
                           correlate, butter, lfilter)
@@ -607,9 +608,12 @@ def plot_all_defaults(clustering_problems, only_centroids=False, title="Apprenan
                 current_color = c_good
                 #if clustering_prob.labels[j]
 
+                current_color = colors.to_rgb(current_color)
+
                 current_axis.plot(pt[0], pt[1], 'o', color=current_color, markersize=10)
 
                 # The label of the point is added (data number)
+
                 current_axis.annotate(j, xy=(pt[0], pt[1]), color=luminance(current_color), ha='center', va='center', fontsize=7)
 
         else:
