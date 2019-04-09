@@ -45,6 +45,7 @@ class Trapezoid:
         return max([np.linalg.norm(x - y) for x in [np.asarray(self.p1), np.asarray(self.p2), np.asarray(self.p3), np.asarray(self.p4)]
                                           for y in [np.asarray(self.p1), np.asarray(self.p2), np.asarray(self.p3), np.asarray(self.p4)]])
 
+@dataclass
 class ClusteringProblem:
     def __init__(self, problem=None, model=None, features=None,
                  centroids=None, labels=None, sil_score=None,
@@ -87,7 +88,7 @@ def import_data(path, import_find):
     return original_data
 
 def feedback():
-    path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/mixed'
+    path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/students/mixed'
     # Expert Data
     name = 'aurel'
     expert_data = import_data(path, name)
@@ -297,6 +298,9 @@ def get_circle(result, point):
 def is_in_circle(point, centroid, diameter):
     return np.linalg.norm(point - centroid) < diameter
 
+def is_in_circle_c(point, circle):
+    return np.linalg.norm(point - circle.center) < circle.radius
+
 def get_cluster_label(original_data, original_labels, clustering_labels):
 
     labelled_cluster = {}
@@ -368,20 +372,21 @@ def mix(distances, c_labels, distance_line_vs_distance_centroids):
 
 
 def only_feedback():
-    path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/pos_normalisation/mixed'
+    path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/students/mixed'
     # Expert Data
     name = 'aurel'
     expert_data = import_data(path, name)
     # Student data
-    name = 'me'
+    name = 'RafaelD'
     student_data = import_data(path, name)
+
 
     # Setting the laterality
     for motion in expert_data:
         motion.laterality = 'Right'
 
     for motion in student_data:
-        motion.laterality = 'Left'
+        motion.laterality = 'Right'
 
     # List of datatypes and joint to process
     # default to check: {Descriptor: [{joint, laterality or not (check left for lefthanded and vice versa)},
@@ -511,24 +516,16 @@ def only_feedback():
 
         clustering_problems.append(clus_prob)
 
-    give_advice(clustering_problems)
-    plot_all_defaults(clustering_problems, only_centroids=True)
+    give_two_advices(clustering_problems)
+    plot_all_defaults(clustering_problems, only_centroids=False)
 
 def get_cluster_labels_from_data_repartition(labels, centroids):
-
     good_or_bad = np.ndarray.tolist(np.where(labels == 0)[0])
 
     if len(set(good_or_bad).intersection([x for x in range(10)])) > 5:
         return('good', 'bad')
 
     return ('bad', 'good')
-
-    # sublabels = list(labels[0:10])
-
-    # if sublabels.count(0) > sublabels.count(1):
-    #     return ('good', 'bad')
-
-    # return ('bad', 'good')
 
 def give_advice(clustering_problems):
     candidates = [x for x in clustering_problems if is_in_trapezoid(x.std_centroid, x.trapezoid.path)]
@@ -537,6 +534,48 @@ def give_advice(clustering_problems):
         dst_to_closest = [np.linalg.norm((x.std_centroid - x.centroids[x.clusters_names.index('good')]) / x.trapezoid.get_max_distance()) for x in candidates]
         print(dst_to_closest)
         advice_to_give = candidates[dst_to_closest.index(min(dst_to_closest))].problem
+        print(f"Problem: {advice_to_give}")
+        print(problems_and_advices[advice_to_give])
+
+def give_two_advices(clustering_problems):
+    candidates = [x for x in clustering_problems if is_in_trapezoid(x.std_centroid, x.trapezoid.path) or
+                                                    is_in_circle_c(x.std_centroid, next((y for y in x.circles if y.is_good == True), None))]
+    if len(candidates) > 1:
+        # dst(std, good) / dst(good, bad) -> normalisation
+        all_dst = [np.linalg.norm((x.std_centroid - x.centroids[x.clusters_names.index('good')]) / x.trapezoid.get_max_distance()) for x in candidates]
+        first_dst = all_dst.index(min(all_dst))
+        all_dst[first_dst] = max(all_dst) + 1
+        second_dst = all_dst.index(min(all_dst))
+
+        advice_to_give = candidates[first_dst].problem
+        print(f"Problem: {advice_to_give}")
+        print(problems_and_advices[advice_to_give])
+        advice_to_give = candidates[second_dst].problem
+        print(f"Problem: {advice_to_give}")
+        print(problems_and_advices[advice_to_give])
+
+    elif len(candidates) == 1:
+        # dst(std, good) / dst(good, bad) -> normalisation
+        dst_to_closest = [np.linalg.norm((x.std_centroid - x.centroids[x.clusters_names.index('good')]) / x.trapezoid.get_max_distance()) for x in candidates]
+        advice_to_give = candidates[dst_to_closest.index(min(dst_to_closest))].problem
+        print(f"Problem: {advice_to_give}")
+        print(problems_and_advices[advice_to_give])
+
+        dst_to_line = [x.distance_to_line for x in clustering_problems]
+        second_advice = dst_to_line.index(min(dst_to_line))
+        advice_to_give = clustering_problems[second_advice].problem
+        print(f"Problem: {advice_to_give}")
+        print(problems_and_advices[advice_to_give])
+
+    else:
+        dst_to_line = [x.distance_to_line for x in clustering_problems]
+        first_advice = dst_to_line.index(min(dst_to_line))
+        advice_to_give = clustering_problems[first_advice].problem
+        print(f"Problem: {advice_to_give}")
+        print(problems_and_advices[advice_to_give])
+        dst_to_line[first_advice] = max(dst_to_line) + 1
+        second_advice = dst_to_line.index(min(dst_to_line))
+        advice_to_give = clustering_problems[second_advice].problem
         print(f"Problem: {advice_to_give}")
         print(problems_and_advices[advice_to_give])
 
