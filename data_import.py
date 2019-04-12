@@ -1,3 +1,4 @@
+# https://artem.krylysov.com/blog/2015/09/29/benchmark-python-json-libraries/
 try:
     import ujson as json
 except ImportError:
