@@ -20,7 +20,7 @@ from data_visualization import (plot_PCA,
                                 multi_plot_PCA,
                                 plot_all_defaults)
 
-from constants import problems_and_advices
+from constants import problemes_et_solutions as problems_and_advices
 @dataclass
 class Circle:
     def __init__(self, center, radius, limits=None, is_good=False):
@@ -316,7 +316,8 @@ def get_cluster_label(original_data, original_labels, clustering_labels):
                 number = k
                 break
 
-        labelled_data.append(number)
+        if not isinstance(number, int):
+            labelled_data.append(number)
 
     c_rep = []
     for cluster in set(clustering_labels):
@@ -377,7 +378,7 @@ def only_feedback():
     name = 'aurel'
     expert_data = import_data(path, name)
     # Student data
-    name = 'RafaelD'
+    name = 'PlautF'
     student_data = import_data(path, name)
 
 
@@ -386,7 +387,7 @@ def only_feedback():
         motion.laterality = 'Right'
 
     for motion in student_data:
-        motion.laterality = 'Right'
+        motion.laterality = 'Left'
 
     # List of datatypes and joint to process
     # default to check: {Descriptor: [{joint, laterality or not (check left for lefthanded and vice versa)},
@@ -426,9 +427,18 @@ def only_feedback():
     scale = False
     normalise = False
 
+
     # Setting the data repartition
     aurelien_data = {'good': [x+1 for x in range(10)],
                      'leaning': [x+1 for x in range(10, 20)],
+                     'javelin': [x+1 for x in range(20, 30)],
+                     'align_arm': [x+1 for x in range(30, 40)],
+                     'elbow_move': [x+1 for x in range(40, 50)]}
+
+    expert_data.pop(19)
+
+    aurelien_data = {'good': [x+1 for x in range(10)],
+                     'leaning': [x+1 for x in range(10, 19)],
                      'javelin': [x+1 for x in range(20, 30)],
                      'align_arm': [x+1 for x in range(30, 40)],
                      'elbow_move': [x+1 for x in range(40, 50)]}
@@ -498,7 +508,7 @@ def only_feedback():
         mix_res = mix(distances_to_centroid, clusters_label, distance_from_line)
 
         clusters_names = get_cluster_labels_from_data_repartition(model[0].labels_, model[0].cluster_centers_)
-        print(clusters_names)
+
         clus_prob = ClusteringProblem(problem=problem[0],
                                       model=model[0], features=model[2],
                                       labels=model[0].labels_,
@@ -517,7 +527,7 @@ def only_feedback():
         clustering_problems.append(clus_prob)
 
     give_two_advices(clustering_problems)
-    plot_all_defaults(clustering_problems, only_centroids=False)
+    plot_all_defaults(clustering_problems, only_centroids=True)
 
 def get_cluster_labels_from_data_repartition(labels, centroids):
     good_or_bad = np.ndarray.tolist(np.where(labels == 0)[0])
@@ -562,6 +572,8 @@ def give_two_advices(clustering_problems):
         print(problems_and_advices[advice_to_give])
 
         dst_to_line = [x.distance_to_line for x in clustering_problems]
+        second_advice = dst_to_line.index(min(dst_to_line))
+        dst_to_line[second_advice] = max(dst_to_line) + 1
         second_advice = dst_to_line.index(min(dst_to_line))
         advice_to_give = clustering_problems[second_advice].problem
         print(f"Problem: {advice_to_give}")
