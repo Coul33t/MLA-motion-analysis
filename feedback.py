@@ -378,7 +378,7 @@ def only_feedback():
     name = 'aurel'
     expert_data = import_data(path, name)
     # Student data
-    name = 'PlautF'
+    name = 'CorgniardA'
     student_data = import_data(path, name)
 
 
@@ -387,7 +387,7 @@ def only_feedback():
         motion.laterality = 'Right'
 
     for motion in student_data:
-        motion.laterality = 'Left'
+        motion.laterality = 'Right'
 
     # List of datatypes and joint to process
     # default to check: {Descriptor: [{joint, laterality or not (check left for lefthanded and vice versa)},
@@ -547,29 +547,44 @@ def give_advice(clustering_problems):
         print(f"Problem: {advice_to_give}")
         print(problems_and_advices[advice_to_give])
 
-def give_two_advices(clustering_problems):
-    candidates = [x for x in clustering_problems if is_in_trapezoid(x.std_centroid, x.trapezoid.path) or
-                                                    is_in_circle_c(x.std_centroid, next((y for y in x.circles if y.is_good == True), None))]
-    if len(candidates) > 1:
-        # dst(std, good) / dst(good, bad) -> normalisation
+def get_indexes(candidates):
+    first_dst = None
+    second_dst = None
+
+    all_dst = []
+
+    if len(candidates) > 0:
         all_dst = [np.linalg.norm((x.std_centroid - x.centroids[x.clusters_names.index('good')]) / x.trapezoid.get_max_distance()) for x in candidates]
         first_dst = all_dst.index(min(all_dst))
+
+    if len(candidates) > 1:
         all_dst[first_dst] = max(all_dst) + 1
         second_dst = all_dst.index(min(all_dst))
 
-        advice_to_give = candidates[first_dst].problem
-        print(f"Problem: {advice_to_give}")
-        print(problems_and_advices[advice_to_give])
-        advice_to_give = candidates[second_dst].problem
-        print(f"Problem: {advice_to_give}")
-        print(problems_and_advices[advice_to_give])
+    return first_dst, second_dst
+
+def give_two_advices(clustering_problems):
+    candidates = [x for x in clustering_problems if (is_in_trapezoid(x.std_centroid, x.trapezoid.path)
+                                                 or is_in_circle_c(x.std_centroid, next((y for y in x.circles if y.is_good == False), None)))
+                                                     and not is_in_circle_c(x.std_centroid, next((y for y in x.circles if y.is_good == True), None))]
+
+    if len(candidates) > 1:
+        print(f"2 or more candidates ({len(candidates)})")
+
+        # dst(std, good) / dst(good, bad) -> normalisation
+        first_advice_idx, second_advice_idx = get_indexes(candidates)
+
+        advice_to_give = candidates[first_advice_idx].problem
+        print(f"Problem: {advice_to_give}\n {problems_and_advices[advice_to_give]}")
+        advice_to_give = candidates[second_advice_idx].problem
+        print(f"Problem: {advice_to_give}\n {problems_and_advices[advice_to_give]}")
 
     elif len(candidates) == 1:
+        print("1 candidate")
+
         # dst(std, good) / dst(good, bad) -> normalisation
-        dst_to_closest = [np.linalg.norm((x.std_centroid - x.centroids[x.clusters_names.index('good')]) / x.trapezoid.get_max_distance()) for x in candidates]
-        advice_to_give = candidates[dst_to_closest.index(min(dst_to_closest))].problem
-        print(f"Problem: {advice_to_give}")
-        print(problems_and_advices[advice_to_give])
+        first_dst, _ = get_indexes(candidates)
+        print(f"Problem: {advice_to_give}\n {problems_and_advices[advice_to_give]}")
 
         dst_to_line = [x.distance_to_line for x in clustering_problems]
         second_advice = dst_to_line.index(min(dst_to_line))
@@ -580,16 +595,26 @@ def give_two_advices(clustering_problems):
         print(problems_and_advices[advice_to_give])
 
     else:
-        dst_to_line = [x.distance_to_line for x in clustering_problems]
+        print("No candidate")
+
+        max_val = max([x.distance_to_line for x in clustering_problems])
+        dst_to_line = []
+        for i, x in enumerate(clustering_problems):
+            if (not is_in_trapezoid(x.std_centroid, x.trapezoid.path)
+                and not is_in_circle_c(x.std_centroid, next((y for y in x.circles if y.is_good == True), None))):
+                dst_to_line.append(x.distance_to_line)
+            else:
+                dst_to_line.append(max_val + 1)
+
+
         first_advice = dst_to_line.index(min(dst_to_line))
         advice_to_give = clustering_problems[first_advice].problem
-        print(f"Problem: {advice_to_give}")
-        print(problems_and_advices[advice_to_give])
+        print(f"Problem: {advice_to_give}\n {problems_and_advices[advice_to_give]}")
+
         dst_to_line[first_advice] = max(dst_to_line) + 1
         second_advice = dst_to_line.index(min(dst_to_line))
         advice_to_give = clustering_problems[second_advice].problem
-        print(f"Problem: {advice_to_give}")
-        print(problems_and_advices[advice_to_give])
+        print(f"Problem: {advice_to_give}\n {problems_and_advices[advice_to_give]}")
 
 if __name__ == '__main__':
     only_feedback()
