@@ -568,12 +568,14 @@ def plot_all_defaults(clustering_problems, only_centroids=False, title="Apprenan
         pca_ed_data = clustering_prob.features
         pca_ed_centroids = clustering_prob.centroids
         pca_ed_std_data = clustering_prob.std_data
+        pca_ed_std_centroid = clustering_prob.std_centroid
 
         if clustering_prob.features.shape[1] > 2:
             pca = PCA(n_components=2, copy=True)
             pca_ed_data = pca.fit_transform(clustering_prob.features)
             pca_ed_centroids = pca.fit_transform(clustering_prob.centroids)
             pca_ed_std_data = pca.fit_transform(clustering_prob.std_data)
+            pca_ed_std_centroid = pca.fit_transform(clustering_prob.std_centroid)
 
         current_axis = axs[floor(i/final_x)][i%final_x]
 
@@ -624,6 +626,9 @@ def plot_all_defaults(clustering_problems, only_centroids=False, title="Apprenan
                 current_color = (0,0,0)
                 current_axis.plot(std_pt[0], std_pt[1], 'o', color=current_color, markersize=10)
                 current_axis.annotate(j, xy=(std_pt[0], std_pt[1]), color=luminance(current_color), ha='center', va='center', fontsize=7)
+
+            current_axis.plot(pca_ed_std_centroid[0], pca_ed_std_centroid[1], 'o', color='red', markersize=15)
+            current_axis.annotate('c', xy=(pca_ed_std_centroid[0], pca_ed_std_centroid[1]), color='black', ha='center', va='center', fontsize=15)
 
 
 
