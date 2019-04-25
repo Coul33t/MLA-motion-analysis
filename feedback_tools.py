@@ -210,7 +210,7 @@ def give_advice(clustering_problems):
         print(f"Problem: {advice_to_give}")
         print(problems_and_advices[advice_to_give])
 
-def get_indexes(candidates):
+def get_indexes(candidates, second_pass=False):
     first_dst = None
     second_dst = None
 
@@ -219,6 +219,8 @@ def get_indexes(candidates):
     if len(candidates) > 0:
         all_dst = [np.linalg.norm((x.std_centroid - x.centroids[x.clusters_names.index('good')]) / x.trapezoid.get_max_distance()) for x in candidates]
         first_dst = all_dst.index(min(all_dst))
+        if second_pass:
+            return first_dst
 
     if len(candidates) > 1:
         all_dst[first_dst] = max(all_dst) + 1
@@ -227,6 +229,7 @@ def get_indexes(candidates):
     return first_dst, second_dst
 
 def give_two_advices(clustering_problems):
+    # Candidates are (In the trapezoid OR in the bad cluster) AND NOT in the good cluster
     candidates = [x for x in clustering_problems if (is_in_trapezoid(x.std_centroid, x.trapezoid.path)
                                                  or is_in_circle_c(x.std_centroid, next((y for y in x.circles if y.is_good == False), None)))
                                                      and not is_in_circle_c(x.std_centroid, next((y for y in x.circles if y.is_good == True), None))]
@@ -250,17 +253,17 @@ def give_two_advices(clustering_problems):
         advice_to_give = candidates[first_advice_idx].problem
         print(f"Problem: {advice_to_give}\n {problems_and_advices[advice_to_give]}")
 
-        # TODO: fix to avoid in cluster motions
-        dst_to_line = [x.distance_to_line for x in clustering_problems]
-        second_advice = dst_to_line.index(min(dst_to_line))
-        dst_to_line[second_advice] = max(dst_to_line) + 1
-        second_advice = dst_to_line.index(min(dst_to_line))
-        advice_to_give = clustering_problems[second_advice].problem
-        print(f"Problem: {advice_to_give}")
-        print(problems_and_advices[advice_to_give])
+        new_candidates = [x for x in clustering_problems if not is_in_circle_c(x.std_centroid, next((y for y in x.circles if y.is_good == True), None))
+                                                         and x.problem != advice_to_give]
+
+        second_advice_idx = get_indexes(candidates, second_pass=True)
+        advice_to_give = new_candidates[second_advice_idx].problem
+        print(f"Problem: {advice_to_give}\n {problems_and_advices[advice_to_give]}")
 
     else:
         print("No candidate")
+
+        new_candidates = [x for x in clustering_problems if not is_in_circle_c(x.std_centroid, next((y for y in x.circles if y.is_good == True), None))]
 
         max_val = max([x.distance_to_line for x in clustering_problems])
         dst_to_line = []
