@@ -563,7 +563,7 @@ def test_full_batch_k_var(path, original_data, name, validate_data=False,
                           graph_title=plot_save_name.replace('_', ' '),
                           x_label='k value', y_label=data_to_graph)
 
-def run_clustering(path, original_data, name, validate_data=False,
+def run_clustering(original_data, validate_data=False,
                    datatype_joints=None, algorithm='k-means',
                    parameters={}, scale_features=False, normalise_features=False,
                    true_labels=None, verbose=False, to_file=True, to_json=True, return_data=False):
