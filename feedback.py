@@ -189,22 +189,19 @@ def feedback():
 
     multi_plot_PCA(features, labels, clusters_names, names, models, sss, title, trapezoids, circles, only_centroids=True, centroids=centroids, std_data=std_data)
 
-def only_feedback():
-    path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/students/mixed'
+def only_feedback(expert, student, path):
     # Expert Data
-    name = 'aurel'
-    expert_data = import_data(path, name)
+    expert_data = import_data(path, expert.name)
     # Student data
-    name = 'LivainC'
-    student_data = import_data(path, name)
+    student_data = import_data(path, student.name)
 
 
     # Setting the laterality
     for motion in expert_data:
-        motion.laterality = 'Right'
+        motion.laterality = expert.laterality
 
     for motion in student_data:
-        motion.laterality = 'Right'
+        motion.laterality = student.laterality
 
     # List of datatypes and joint to process
     # default to check: {Descriptor: [{joint, laterality or not (check left for lefthanded and vice versa)},
@@ -338,4 +335,7 @@ def only_feedback():
     plot_all_defaults(clustering_problems, only_centroids=True)
 
 if __name__ == '__main__':
-    only_feedback()
+    expert = Person(r'', 'aurel', 'Right')
+    student = Person(r'', 'MaurinM', 'Right')
+    path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/students/mixed'
+    only_feedback(expert, student, path)
