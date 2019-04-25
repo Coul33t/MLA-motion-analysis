@@ -642,6 +642,92 @@ def plot_all_defaults(clustering_problems, only_centroids=False, title="Apprenan
 
     plt.show()
 
+def plot_progression(clustering_problems, title=None, text=None):
+    # Computing the needed space for plotting
+    size = len(clustering_problems[0])
+
+    final_x = 0
+
+    for i in range(10):
+        if pow(i,2) < size:
+            final_x += 1
+
+    final_y = ceil(size / final_x)
+
+    fig, axs = plt.subplots(final_y, final_x, sharex=False, sharey=False)
+
+    fig.suptitle(title, fontsize=30)
+
+    # clustering_prob is a list of list, 4 ClusteringProblem for each default
+    for i, clustering_prob in enumerate(clustering_problems):
+        # Won't change between different ClusteringProblem for each default
+        pca_ed_centroids = clustering_prob[0].centroids
+
+        if clustering_prob[0].features.shape[1] > 2:
+            pca = PCA(n_components=2, copy=True)
+            pca_ed_centroids = pca.fit_transform(clustering_prob[0].centroids)
+
+        final_std_centroids = []
+
+        for sub_cp in clustering_prob:
+            pca_ed_std_centroid = sub_cp.std_centroid
+
+            if sub_cp.features.shape[1] > 2:
+                pca_ed_std_centroid = pca.fit_transform(pca_ed_std_centroid.std_centroid)
+
+            final_std_centroids.append(pca_ed_std_centroid)
+
+        current_axis = axs[floor(i/final_x)][i%final_x]
+
+        if clustering_prob[0].trapezoid:
+            patch = patches.PathPatch(clustering_prob[0].trapezoid.path, facecolor='PaleGreen', lw=0)
+            current_axis.add_patch(patch)
+
+        if clustering_prob[0].circles:
+            for i, circle in enumerate(clustering_prob[0].circles):
+                if circle.is_good:
+                    c1 = 'DarkMagenta'
+                    c2 = 'DodgerBlue'
+                    c3 = 'SkyBlue'
+                else:
+                    c1 = 'LightSalmon'
+                    c2 = 'IndianRed'
+                    c3 = 'Crimson'
+
+                circle_to_draw = patches.Circle(circle.center, circle.limits['radius_max'], facecolor=c1, lw=0)
+                current_axis.add_patch(circle_to_draw)
+                circle_to_draw = patches.Circle(circle.center, circle.limits['radius_med'], facecolor=c2, lw=0)
+                current_axis.add_patch(circle_to_draw)
+                circle_to_draw = patches.Circle(circle.center, circle.limits['radius_min'], facecolor=c3, lw=0)
+                current_axis.add_patch(circle_to_draw)
+
+        c_good = 'Green'
+        c_bad = 'BlueViolet'
+
+        for j, centroid in enumerate(pca_ed_centroids):
+            current_color = c_good
+            current_axis.plot(centroid[0], centroid[1], 'o', color=current_color, markersize=10)
+
+        colors_for_centroids = [(1,0,0), (1,0.7,0.1), (0,0,1), (0,1,0)]
+        for j, std_pt in enumerate(final_std_centroids):
+            current_color = colors_for_centroids[j]
+            if j < len(final_std_centroids)-1:
+                current_axis.plot([std_pt[0], final_std_centroids[j+1][0]], [std_pt[1], final_std_centroids[j+1][1]], 'o-', color=current_color, markersize=15)
+            current_axis.plot(std_pt[0], std_pt[1], 'o', color=current_color, markersize=15)
+            current_axis.annotate(j+1, xy=(std_pt[0], std_pt[1]), color=luminance(current_color), ha='center', va='center', fontsize=13)
+
+
+
+        current_axis.set_title(clustering_prob[0].algo_name)
+        ax = current_axis.axis()
+        min_val = min(ax[0], ax[2])
+        max_val = max(ax[1], ax[3])
+        current_axis.set_xlim([min_val, max_val])
+        current_axis.set_ylim([min_val, max_val])
+
+
+    plt.show()
+
 def luminance(colour):
     """
         Compute the luminance of a colour, and return the adequate colour
