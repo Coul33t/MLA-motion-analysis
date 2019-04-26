@@ -40,7 +40,7 @@ def import_data(path, import_find):
 
 def copy_data(expert_path, student_path, output_path, student_to_copy=None):
     if os.path.exists(output_path):
-        print("WARNING: path already exists! Do you want to continue (the folder and its contents WILL BE deleted)? (y/n)")
+        print(f"WARNING: path\n{output_path}\nalready exists! Do you want to continue (the folder and its contents WILL BE deleted)? (y/n)")
         res = input()
         if not res.lower() == 'y':
             print("ABORTED.")
@@ -216,9 +216,9 @@ def progression(expert, student, tmp_path):
     plot_progression(clustering_problems, title=title_to_print, text=None)
 
 if __name__ == "__main__":
-    expert = Person(r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartscopyforpythontests/aurelien_cut', 'aurel', 'Right')
-    student = Person(r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartscopyforpythontests/students/Ponroy_Loris', 'darts', 'Right')
-    tmp_path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartscopyforpythontests/tmp_path'
+    expert = Person(r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/aurelien', 'aurel', 'Right')
+    student = Person(r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/students/Sicard_Teddy', 'SicardT', 'Right')
+    tmp_path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/tmp_path'
     progression(expert, student, tmp_path)
     # if copy_data(expert.path, student.path, tmp_path, student_to_copy=[x for x in range(9)]):
     #     delete_path(tmp_path)
