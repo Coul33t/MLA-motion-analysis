@@ -210,7 +210,7 @@ def give_advice(clustering_problems):
         print(f"Problem: {advice_to_give}")
         print(problems_and_advices[advice_to_give])
 
-def get_indexes(candidates, second_pass=False):
+def get_indexes(candidates, second_pass=False, biggest=False):
     first_dst = None
     second_dst = None
 
@@ -220,6 +220,8 @@ def get_indexes(candidates, second_pass=False):
         all_dst = [np.linalg.norm((x.std_centroid - x.centroids[x.clusters_names.index('good')]) / x.trapezoid.get_max_distance()) for x in candidates]
         first_dst = all_dst.index(min(all_dst))
         if second_pass:
+            if biggest:
+                return all_dst.index(max(all_dst))
             return first_dst
 
     if len(candidates) > 1:
@@ -255,8 +257,14 @@ def give_two_advices(clustering_problems):
 
         new_candidates = [x for x in clustering_problems if not is_in_circle_c(x.std_centroid, next((y for y in x.circles if y.is_good == True), None))
                                                          and x.problem != advice_to_give]
+        biggest = False
+        # If everything is in good clusters (lul)
+        if not new_candidates:
+            new_candidates = [x for x in clustering_problems if x.problem != advice_to_give]
+            biggest = True
 
-        second_advice_idx = get_indexes(candidates, second_pass=True)
+        second_advice_idx = get_indexes(new_candidates, second_pass=True, biggest=biggest)
+
         advice_to_give = new_candidates[second_advice_idx].problem
         print(f"Problem: {advice_to_give}\n {problems_and_advices[advice_to_give]}")
 
