@@ -13,10 +13,11 @@ from constants import problemes_et_solutions as problems_and_advices
 
 @dataclass
 class Person:
-    def __init__(self, path, name, laterality):
+    def __init__(self, path, name, laterality, full_name=None):
         self.path = path
         self.name = name
         self.laterality = laterality
+        self.full_name = full_name
 
 @dataclass
 class Circle:
