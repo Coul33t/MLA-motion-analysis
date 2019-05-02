@@ -1,3 +1,8 @@
+import os
+import stat
+from shutil import rmtree
+from distutils.dir_util import copy_tree
+
 from sklearn.decomposition import PCA
 
 from data_import import json_import
@@ -190,11 +195,15 @@ def feedback():
     multi_plot_PCA(features, labels, clusters_names, names, models, sss, title, trapezoids, circles, only_centroids=True, centroids=centroids, std_data=std_data)
 
 def only_feedback(expert, student, path):
+    if path.split('/')[-1] == 'mixed':
+        take_last_data("/".join(path.split('/')[:-1]), student, expert, number=9)
+    else:
+        take_last_data(path, student, expert, number=9)
+
     # Expert Data
     expert_data = import_data(path, expert.name)
     # Student data
     student_data = import_data(path, student.name)
-
 
     # Setting the laterality
     for motion in expert_data:
@@ -334,8 +343,32 @@ def only_feedback(expert, student, path):
     give_two_advices(clustering_problems)
     plot_all_defaults(clustering_problems, only_centroids=True)
 
+def take_last_data(path, student, expert, number=9):
+
+    if not student.full_name in os.listdir(path):
+        print(f'ERROR: {student.full_name} not found in {path}.')
+        return False
+
+    mixed_path = os.path.normpath(os.path.join(path, 'mixed'))
+
+    # Remove all non-expert data )
+    for file in os.listdir(mixed_path):
+        if expert.name not in file:
+            rmtree(os.path.normpath(os.path.join(mixed_path, file)))
+
+    std_path = os.path.normpath(os.path.join(path, student.full_name))
+
+    file_list = os.listdir(std_path)
+    file_list = sorted(file_list, key=lambda sin: int(sin.replace(student.name + '_', '').replace('Char00', '')))
+    folders_to_copy = file_list[-number:]
+
+    for folder_to_copy in folders_to_copy:
+        std_folder = os.path.join(std_path, folder_to_copy)
+        print(f'doing {std_folder}')
+        copy_tree(std_folder, os.path.join(mixed_path, folder_to_copy))
+
 if __name__ == '__main__':
     expert = Person(r'', 'aurel', 'Right')
-    student = Person(r'', 'MaurinM', 'Right')
+    student = Person(r'', '', '', '')
     path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/students/mixed'
     only_feedback(expert, student, path)
