@@ -195,10 +195,13 @@ def feedback():
     multi_plot_PCA(features, labels, clusters_names, names, models, sss, title, trapezoids, circles, only_centroids=True, centroids=centroids, std_data=std_data)
 
 def only_feedback(expert, student, path):
-    if path.split('/')[-1] == 'mixed':
-        take_last_data("/".join(path.split('/')[:-1]), student, expert, number=9)
-    else:
-        take_last_data(path, student, expert, number=9)
+    folders_path = path
+    if folders_path.split('/')[-1] == 'mixed':
+        folders_path = "/".join(path.split('/')[:-1])
+
+    if not take_last_data(folders_path, student, expert, number=9):
+        print(f'ERROR: {folders_path} does not exists')
+        return
 
     # Expert Data
     expert_data = import_data(path, expert.name)
@@ -354,6 +357,7 @@ def take_last_data(path, student, expert, number=9):
     # Remove all non-expert data )
     for file in os.listdir(mixed_path):
         if expert.name not in file:
+            print(f'Removed {file}')
             rmtree(os.path.normpath(os.path.join(mixed_path, file)))
 
     std_path = os.path.normpath(os.path.join(path, student.full_name))
@@ -364,11 +368,13 @@ def take_last_data(path, student, expert, number=9):
 
     for folder_to_copy in folders_to_copy:
         std_folder = os.path.join(std_path, folder_to_copy)
-        print(f'doing {std_folder}')
+        print(f'Copying {folder_to_copy}')
         copy_tree(std_folder, os.path.join(mixed_path, folder_to_copy))
+
+    return True
 
 if __name__ == '__main__':
     expert = Person(r'', 'aurel', 'Right')
-    student = Person(r'', '', '', '')
+    student = Person(r'', 'DucheminT', 'Right', 'Duchemin_Thomas')
     path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/students/mixed'
     only_feedback(expert, student, path)
