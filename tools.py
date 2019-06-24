@@ -1,11 +1,20 @@
 import os
 import re
 
+from dataclasses import dataclass
+
 from collections import OrderedDict
 
-import constants as cst
-
 import pdb
+
+@dataclass
+class Person:
+    def __init__(self, path, name, laterality, full_name=None):
+        self.path = path
+        self.name = name
+        self.laterality = laterality
+        self.full_name = full_name
+
 
 def file_name_gathering(folder_path):
     """
@@ -126,7 +135,6 @@ def string_redundancy_remover(strg):
         strg = strg[:idx] + strg[idx:].replace(name, '_')
 
     return strg
-
 
 if __name__ == '__main__':
     # s = 'output_BegMaxEndSpeedDirxBegMaxEndSpeedDiryBegMaxEndSpeedDirzBegMaxEndSpeedxBegMaxEndSpeedyBegMaxEndSpeedz'
