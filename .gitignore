@@ -6,9 +6,12 @@ Profiles/
 *.txt
 *.svg
 *.gml
+*.csv
+*.xlsx
 ex1/
 tmp_res/
 data/
+csv_test/
 # ---------------------
 
 # Byte-compiled / optimized / DLL files
