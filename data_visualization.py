@@ -612,6 +612,8 @@ def plot_all_defaults(clustering_problems, only_centroids=False, title="Apprenan
 
                 current_color = colors.to_rgb(current_color)
 
+                if len(pt) == 1:
+                    pt = np.asarray([pt[0], 0.0])
                 current_axis.plot(pt[0], pt[1], 'o', color=current_color, markersize=10)
 
                 # The label of the point is added (data number)
@@ -621,12 +623,19 @@ def plot_all_defaults(clustering_problems, only_centroids=False, title="Apprenan
         else:
             for j, centroid in enumerate(pca_ed_centroids):
                 current_color = c_good
+                if len(centroid) == 1:
+                    centroid = np.asarray([centroid[0], 0.0])
                 current_axis.plot(centroid[0], centroid[1], 'o', color=current_color, markersize=10)
+
             for j, std_pt in enumerate(pca_ed_std_data):
                 current_color = (0,0,0)
+                if len(std_pt) == 1:
+                    std_pt = np.asarray([std_pt[0], 0.0])
                 current_axis.plot(std_pt[0], std_pt[1], 'o', color=current_color, markersize=10)
                 current_axis.annotate(j, xy=(std_pt[0], std_pt[1]), color=luminance(current_color), ha='center', va='center', fontsize=7)
 
+            if len(pca_ed_std_centroid) == 1:
+                pca_ed_std_centroid = np.asarray([pca_ed_std_centroid[0], 0.0])
             current_axis.plot(pca_ed_std_centroid[0], pca_ed_std_centroid[1], 'o', color='red', markersize=15)
             current_axis.annotate('c', xy=(pca_ed_std_centroid[0], pca_ed_std_centroid[1]), color='black', ha='center', va='center', fontsize=15)
 

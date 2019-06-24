@@ -1,23 +1,21 @@
+import os
 from math import floor, sqrt
 import operator
+import csv
 
 from dataclasses import dataclass
 
 import numpy as np
+import pandas as pd
 
 from scipy.spatial import distance
 
 import matplotlib.path as mplPath
 
+from shutil import rmtree
+
 from constants import problemes_et_solutions as problems_and_advices
 
-@dataclass
-class Person:
-    def __init__(self, path, name, laterality, full_name=None):
-        self.path = path
-        self.name = name
-        self.laterality = laterality
-        self.full_name = full_name
 
 @dataclass
 class Circle:
@@ -74,17 +72,27 @@ def compute_distance(centroids, feature):
     return [np.linalg.norm(feature - centroid) for centroid in centroids]
 
 def dst_pts(pt1, pt2):
+    if len(pt1) == 1:
+        return abs(pt2-pt1)[0]
+
     return sqrt(pow(pt2[0] - pt1[0], 2) + pow(pt2[1] - pt1[1], 2))
+
 
 def get_trapezoid(result, point):
     centroids = result[0].cluster_centers_
     points = [result[2][np.where(result[0].labels_ == i)] for i in np.unique(result[0].labels_)]
     max_dst = [max(max(distance.cdist([centroids[i]], cluster, 'euclidean'))) for i, cluster in enumerate(points)]
 
-    p1 = (centroids[0][0], centroids[0][1] + max_dst[0])
-    p4 = (centroids[0][0], centroids[0][1] - max_dst[0])
-    p2 = (centroids[1][0], centroids[1][1] + max_dst[1])
-    p3 = (centroids[1][0], centroids[1][1] - max_dst[1])
+    if len(centroids[0]) == 1:
+        p1 = (centroids[0][0], 0 + max_dst[0])
+        p4 = (centroids[0][0], 0 - max_dst[0])
+        p2 = (centroids[1][0], 0 + max_dst[1])
+        p3 = (centroids[1][0], 0 - max_dst[1])
+    else:
+        p1 = (centroids[0][0], centroids[0][1] + max_dst[0])
+        p4 = (centroids[0][0], centroids[0][1] - max_dst[0])
+        p2 = (centroids[1][0], centroids[1][1] + max_dst[1])
+        p3 = (centroids[1][0], centroids[1][1] - max_dst[1])
 
     trapezoid = Trapezoid(p1, p2, p3, p4)
     # trapezoid = mplPath.Path(np.array([p1, p2, p3, p4]))
@@ -92,11 +100,24 @@ def get_trapezoid(result, point):
     return trapezoid
 
 def is_in_trapezoid(point, trapezoid):
-    return trapezoid.contains_point(point)
+    point_to_check = point
+    if len(point_to_check) == 1:
+        point_to_check = np.array([point, 0.0])
+
+    return trapezoid.contains_point(point_to_check)
+
 
 def get_circle(result, point):
     centroids = result[0].cluster_centers_
     points = [result[2][np.where(result[0].labels_ == i)] for i in np.unique(result[0].labels_)]
+
+    if len(centroids[0]) == 1:
+        centroids = np.asarray([np.array([x[0], 0.0]) for x in result[0].cluster_centers_])
+        points_tmp = []
+        for subpoints in points:
+            points_tmp.append(np.asarray([np.array([x[0], 0.0]) for x in subpoints]))
+        points = points_tmp
+
 
     good_or_bad = np.ndarray.tolist(np.where(result[0].labels_ == 0)[0])
 
@@ -129,9 +150,14 @@ def get_cluster_label(original_data, original_labels, clustering_labels):
     labelled_data = []
     for data in original_data:
         # Get rid of the name + the Char00
-
-        # number = int(data.name.split('_')[1][:-6])
-        number = int(data.name.split("_")[-2])
+        # Since I changed the name of the files, we catch the ValueError
+        # exception if it's the old format
+        # new : [name]_[number]Char00
+        # old : [name]_[number]_Char00
+        try:
+            number = int(data.name.split("_")[-2])
+        except ValueError:
+            number = int(data.name.split("_")[1].replace("Char00", ""))
 
         for k, v in original_labels.items():
             if number in v:
@@ -146,7 +172,7 @@ def get_cluster_label(original_data, original_labels, clustering_labels):
         c_rep.append({x: 0 for x in original_labels.keys()})
         for i, elem in enumerate(clustering_labels):
             if elem == cluster:
-                c_rep[-1][labelled_data[i]] += 1
+                 c_rep[-1][labelled_data[i]] += 1
 
 
     for i, cluster in enumerate(c_rep):
@@ -158,10 +184,14 @@ def get_centroid_student(std_data):
     return np.mean(std_data, axis=0)
 
 def get_distance_from_expert_centoids_line(exp_centroids, std_centroid):
+    if len(exp_centroids[0]) == 1:
+        return 0
+
     pt1 = {'x': exp_centroids[0][0], 'y': exp_centroids[0][1]}
     pt2 = {'x': exp_centroids[1][0], 'y': exp_centroids[1][1]}
 
     pt_std = {'x': std_centroid[0], 'y': std_centroid[1]}
+
 
     A = pt2['y'] - pt1['y']
     B = pt2['x'] - pt1['x']
@@ -192,6 +222,68 @@ def mix(distances, c_labels, distance_line_vs_distance_centroids):
     print(f"] {keys_to_display[1]} ({distance_line_vs_distance_centroids:.2f})")
 
     return (keys_to_display, distance_line_vs_distance_centroids)
+
+def get_closeness_to_clusters(c_labels, features, cps, problem, name='', to_print=True, to_csv=True):
+    # TODO: rename the variables to something at least barely explicit ffs
+    new_dict = {}
+    label_lst = []
+    for i, (_, v) in enumerate(c_labels.items()):
+        new_dict[v] = []
+        label_lst.append(v)
+
+    lst = []
+    for i, feat in enumerate(features):
+        distance = compute_distance(cps, feat)
+        lst.append({"sample": i, label_lst[0]: round(distance[0], 4), label_lst[1]: round(distance[1], 4)})
+
+    if to_print:
+        for sample in lst:
+            print(f"{sample['sample']} {sample['good']} {sample[problem]} {problem}")
+
+    if to_csv:
+        path_to_file = f'{problem}_output.csv'
+        if name:
+            path_to_file = f'{name}_' + path_to_file
+        path_to_file = 'csv_test/' + path_to_file
+
+        with open(path_to_file, 'a', newline='') as out_csv:
+            data_distance_writer = csv.writer(out_csv, delimiter=',', quotechar='"')
+            data_distance_writer.writerow('')
+            for sample in lst:
+                data_distance_writer.writerow([sample['good'], sample[problem]])
+
+def csv_merger(path, name=None):
+    # csv_align_arm = open(path + f'{name}_align_arm_output.csv')
+    # csv_elbow_move = open(path + f'{name}_elbow_move_output.csv')
+    # csv_javelin = open(path + f'{name}_javelin_output.csv')
+    # csv_leaning = open(path + f'{name}_leaning_output.csv')
+
+    files_to_concatenate = [f'{path}{name}_leaning_output.csv',
+                            f'{path}{name}_elbow_move_output.csv',
+                            f'{path}{name}_javelin_output.csv',
+                            f'{path}{name}_align_arm_output.csv']
+
+    temp_data = []
+    for filenames in files_to_concatenate:
+        temp_data.append(np.loadtxt(filenames, dtype='str'))
+
+    temp_data = np.array(temp_data)
+    np.savetxt(f'{path}{name}_merged.csv', temp_data.transpose(), fmt='%s', delimiter=',')
+
+    # with open(f'{path}_{name}_merged.csv', 'w') as final_csv_out:
+
+
+    # csv_align_arm.close()
+    # csv_elbow_move.close()
+    # csv_javelin.close()
+    # csv_leaning.close()
+
+def clean_csv_folder(path, verbose=False):
+    for file in os.listdir(path):
+        if '.csv' in file and 'merged' not in file:
+            if verbose:
+                print(f'Removed {file}')
+            os.remove(os.path.normpath(os.path.join(path, file)))
 
 def get_cluster_labels_from_data_repartition(labels, centroids):
     good_or_bad = np.ndarray.tolist(np.where(labels == 0)[0])
@@ -232,6 +324,9 @@ def get_indexes(candidates, second_pass=False, biggest=False):
     return first_dst, second_dst
 
 def give_two_advices(clustering_problems):
+
+    first_advice_to_give = None
+    second_advice_to_give = None
     # Candidates are (In the trapezoid OR in the bad cluster) AND NOT in the good cluster
     candidates = [x for x in clustering_problems if (is_in_trapezoid(x.std_centroid, x.trapezoid.path)
                                                  or is_in_circle_c(x.std_centroid, next((y for y in x.circles if y.is_good == False), None)))
@@ -243,31 +338,31 @@ def give_two_advices(clustering_problems):
         # dst(std, good) / dst(good, bad) -> normalisation
         first_advice_idx, second_advice_idx = get_indexes(candidates)
 
-        advice_to_give = candidates[first_advice_idx].problem
-        print(f"Problem: {advice_to_give}\n {problems_and_advices[advice_to_give]}")
-        advice_to_give = candidates[second_advice_idx].problem
-        print(f"Problem: {advice_to_give}\n {problems_and_advices[advice_to_give]}")
+        first_advice_to_give = candidates[first_advice_idx].problem
+        print(f"Problem: {first_advice_to_give}\n {problems_and_advices[first_advice_to_give]}")
+        second_advice_to_give = candidates[second_advice_idx].problem
+        print(f"Problem: {second_advice_to_give}\n {problems_and_advices[second_advice_to_give]}")
 
     elif len(candidates) == 1:
         print("1 candidate")
 
         # dst(std, good) / dst(good, bad) -> normalisation
         first_advice_idx, _ = get_indexes(candidates)
-        advice_to_give = candidates[first_advice_idx].problem
-        print(f"Problem: {advice_to_give}\n {problems_and_advices[advice_to_give]}")
+        first_advice_to_give = candidates[first_advice_idx].problem
+        print(f"Problem: {first_advice_to_give}\n {problems_and_advices[first_advice_to_give]}")
 
         new_candidates = [x for x in clustering_problems if not is_in_circle_c(x.std_centroid, next((y for y in x.circles if y.is_good == True), None))
-                                                         and x.problem != advice_to_give]
+                                                         and x.problem != first_advice_to_give]
         biggest = False
         # If everything is in good clusters (lul)
         if not new_candidates:
-            new_candidates = [x for x in clustering_problems if x.problem != advice_to_give]
+            new_candidates = [x for x in clustering_problems if x.problem != first_advice_to_give]
             biggest = True
 
         second_advice_idx = get_indexes(new_candidates, second_pass=True, biggest=biggest)
 
-        advice_to_give = new_candidates[second_advice_idx].problem
-        print(f"Problem: {advice_to_give}\n {problems_and_advices[advice_to_give]}")
+        second_advice_to_give = new_candidates[second_advice_idx].problem
+        print(f"Problem: {second_advice_to_give}\n {problems_and_advices[second_advice_to_give]}")
 
     else:
         print("No candidate")
@@ -285,10 +380,12 @@ def give_two_advices(clustering_problems):
 
 
         first_advice = dst_to_line.index(min(dst_to_line))
-        advice_to_give = clustering_problems[first_advice].problem
-        print(f"Problem: {advice_to_give}\n {problems_and_advices[advice_to_give]}")
+        first_advice_to_give = clustering_problems[first_advice].problem
+        print(f"Problem: {first_advice_to_give}\n {problems_and_advices[first_advice_to_give]}")
 
         dst_to_line[first_advice] = max(dst_to_line) + 1
         second_advice = dst_to_line.index(min(dst_to_line))
-        advice_to_give = clustering_problems[second_advice].problem
-        print(f"Problem: {advice_to_give}\n {problems_and_advices[advice_to_give]}")
+        second_advice_to_give = clustering_problems[second_advice].problem
+        print(f"Problem: {second_advice_to_give}\n {problems_and_advices[second_advice_to_give]}")
+
+    return (first_advice_to_give, second_advice_to_give)
