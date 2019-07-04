@@ -180,8 +180,8 @@ def get_cluster_label(original_data, original_labels, clustering_labels):
 
     return labelled_cluster
 
-def get_centroid_student(std_data):
-    return np.mean(std_data, axis=0)
+def get_centroid(data):
+    return np.mean(data, axis=0)
 
 def get_distance_from_expert_centoids_line(exp_centroids, std_centroid):
     if len(exp_centroids[0]) == 1:
