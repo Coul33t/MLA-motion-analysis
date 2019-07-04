@@ -136,6 +136,23 @@ def string_redundancy_remover(strg):
 
     return strg
 
+
+def merge_list_of_dictionnaries(list_of_dict):
+    new_dict = {}
+
+    for current_dict in list_of_dict:
+        merge_dictionnaries_values(new_dict, current_dict)
+
+    return new_dict
+
+def merge_dictionnaries_values(dict_to_populate, dict_to_add):
+    for k, v in dict_to_add.items():
+        if k not in dict_to_populate.keys():
+            dict_to_populate[k] = v
+        else:
+            for joint in v:
+                dict_to_populate[k].append(joint)
+
 if __name__ == '__main__':
     # s = 'output_BegMaxEndSpeedDirxBegMaxEndSpeedDiryBegMaxEndSpeedDirzBegMaxEndSpeedxBegMaxEndSpeedyBegMaxEndSpeedz'
     s = ['Esteban', 'Guillaume', 'Ines', 'Iza', 'Ludovic', 'Marc', 'Oussema', 'Pierre', 'Sebastien', 'Vincent', 'Yann']
