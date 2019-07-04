@@ -651,6 +651,57 @@ def plot_all_defaults(clustering_problems, only_centroids=False, title="Apprenan
 
     plt.show()
 
+def plot_all_defaults_at_once(exp_features, exp_centroid, exp_circle, std_features, std_centroid, only_centroids=False, title="Apprenant VS expert"):
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    ax.set_title(title, fontsize=30)
+
+    # Plotting expert circle
+    c1 = 'DarkMagenta'
+    c2 = 'DodgerBlue'
+    c3 = 'SkyBlue'
+
+    circle_to_draw = patches.Circle(exp_circle.center, exp_circle.limits['radius_max'], facecolor=c1, lw=0)
+    ax.add_patch(circle_to_draw)
+    circle_to_draw = patches.Circle(exp_circle.center, exp_circle.limits['radius_med'], facecolor=c2, lw=0)
+    ax.add_patch(circle_to_draw)
+    circle_to_draw = patches.Circle(exp_circle.center, exp_circle.limits['radius_min'], facecolor=c3, lw=0)
+    ax.add_patch(circle_to_draw)
+
+    c_good = 'Green'
+    c_bad = 'BlueViolet'
+
+    if not only_centroids:
+        for j, pt in enumerate(exp_features):
+
+            current_color = c_good
+            current_color = colors.to_rgb(current_color)
+
+            if len(pt) == 1:
+                pt = np.asarray([pt[0], 0.0])
+            ax.plot(pt[0], pt[1], 'o', color=current_color, markersize=10)
+
+            # The label of the point is added (data number)
+            ax.annotate(j, xy=(pt[0], pt[1]), color=luminance(current_color), ha='center', va='center', fontsize=7)
+
+    else:
+        current_color = c_good
+        ax.plot(exp_centroid[0], exp_centroid[1], 'o', color=current_color, markersize=10)
+
+        for j, std_pt in enumerate(std_features):
+            current_color = (0,0,0)
+            if len(std_pt) == 1:
+                std_pt = np.asarray([std_pt[0], 0.0])
+            ax.plot(std_pt[0], std_pt[1], 'o', color=current_color, markersize=10)
+            ax.annotate(j, xy=(std_pt[0], std_pt[1]), color=luminance(current_color), ha='center', va='center', fontsize=7)
+
+        ax.plot(std_centroid[0], std_centroid[1], 'o', color='red', markersize=15)
+        ax.annotate('c', xy=(std_centroid[0], std_centroid[1]), color='black', ha='center', va='center', fontsize=15)
+
+    plt.show()
+
 def plot_progression(clustering_problems, title=None, text=None):
     # Computing the needed space for plotting
     size = len(clustering_problems[0])

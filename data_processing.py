@@ -13,6 +13,7 @@ import numpy as np
 
 from sklearn.cluster import estimate_bandwidth
 from sklearn.preprocessing import RobustScaler, MinMaxScaler
+from sklearn.decomposition import PCA
 
 # Personnal packages
 from tools import (flatten_list,
@@ -51,7 +52,8 @@ from algos.metrics import (f_score_computing,
 from data_visualization import (plot_data_k_means,
                                 plot_data_sub_k_means,
                                 simple_plot_2d,
-                                simple_plot_2d_2_curves)
+                                simple_plot_2d_2_curves,
+                                plot_all_defaults_at_once)
 
 from data_selection import data_gathering
 
@@ -61,6 +63,7 @@ from results_analysing import Results
 # Ground truth for data
 import data_labels as dl
 
+from feedback_tools import *
 # Constants (well more like " huge lists " but whatever)
 import constants as cst
 
@@ -1020,3 +1023,33 @@ def k_means_second_pass_all_data(file_path, result_path, file_name, person_name)
                                               save=save_graph, name=plot_save_name,
                                               path=path_to_export, graph_title=plot_save_name.replace('_', ' '),
                                               x_label='k value', y_label=data_to_graph)
+
+
+def plot_good_vs_student_all_data(expert_good_data, student_data, algorithm_and_parameter, datatype_joints_list, only_centroids=False):
+
+    std_features = data_gathering(student_data, datatype_joints_list)
+    exp_features = data_gathering(expert_good_data, datatype_joints_list)
+
+    exp_centroid = get_centroid(exp_features)
+    std_centroid = get_centroid(std_features)
+
+    if len(exp_centroid) > 2:
+        pca = PCA(n_components=2, copy=True)
+        pca.fit(exp_features)
+
+        exp_features = pca.transform(exp_features)
+        exp_centroid = pca.transform(exp_centroid.reshape(1, -1))[0]
+        std_features = pca.transform(std_features)
+        std_centroid = pca.transform(std_centroid.reshape(1, -1))[0]
+
+    max_dst_exp = max(max(distance.cdist([exp_centroid], exp_features, 'euclidean')))
+    med_dst_exp = intra_cluster_dst(exp_centroid, exp_features)
+
+    circle_expert = Circle(exp_centroid, max_dst_exp,
+        limits={'center': exp_centroid, 'radius_max':max_dst_exp,
+                'radius_med':(max_dst_exp + med_dst_exp) / 2,
+                'radius_min':med_dst_exp},
+        is_good=False)
+
+    plot_all_defaults_at_once(exp_features, exp_centroid, circle_expert, std_features, std_centroid, only_centroids=only_centroids)
+
