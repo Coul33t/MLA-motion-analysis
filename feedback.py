@@ -8,7 +8,8 @@ from sklearn.decomposition import PCA
 from data_import import json_import
 
 from data_processing import (run_clustering,
-                             data_gathering)
+                             data_gathering,
+                             plot_good_vs_student_all_data)
 
 from data_visualization import (plot_PCA,
                                 multi_plot_PCA,
@@ -16,7 +17,7 @@ from data_visualization import (plot_PCA,
 
 from feedback_tools import *
 
-from tools import Person
+from tools import Person, merge_list_of_dictionnaries
 
 import constants as cst
 
@@ -95,7 +96,7 @@ def feedback():
     normalise = False
 
     # Setting the data repartition
-    aurelien_data = {'good': [x+1 for x in range(10)],
+    expert_data_repartion = {'good': [x+1 for x in range(10)],
                      'leaning': [x+1 for x in range(10, 20)],
                      'javelin': [x+1 for x in range(20, 30)],
                      'align_arm': [x+1 for x in range(30, 40)],
@@ -111,7 +112,7 @@ def feedback():
     for problem in datatype_joints_list:
 
         datatype_joints = problem[1]
-        expert_sub_data = expert_data[:10] + expert_data[min(aurelien_data[problem[0]])-1:max(aurelien_data[problem[0]])]
+        expert_sub_data = expert_data[:10] + expert_data[min(expert_data_repartion[problem[0]])-1:max(expert_data_repartion[problem[0]])]
 
         for algo, param in algos.items():
             print(problem[0])
@@ -136,7 +137,7 @@ def feedback():
             std_features = min_max_scaler.fit_transform(std_features)
 
         # Compute the centroid of the student's features (Euclidean distance for now)
-        std_centroid = get_centroid_student(std_features)
+        std_centroid = get_centroid(std_features)
 
         # For the rest of the algorithm, if there are more than 2 features,
         # we run the data through a PCA for the next steps
@@ -163,7 +164,7 @@ def feedback():
             distances_to_centroid[i] = distance/summ
 
         # Get the most probable cluster label for expert data
-        clusters_label = get_cluster_label(expert_sub_data, aurelien_data, model[0].labels_)
+        clusters_label = get_cluster_label(expert_sub_data, expert_data_repartion, model[0].labels_)
         # Display the closeness of the student's data to each expert cluster
         mix_res = mix(distances_to_centroid, clusters_label, distance_from_line)
         distances_and_clusters.append(mix_res)
@@ -256,7 +257,7 @@ def only_feedback(expert, student, path):
     scale = False
     normalise = False
 
-    aurelien_data = {'good': [x+1 for x in range(10)],
+    expert_data_repartion = {'good': [x+1 for x in range(10)],
                      'leaning': [x+1 for x in range(10, 19)],
                      'javelin': [x+1 for x in range(20, 30)],
                      'align_arm': [x+1 for x in range(30, 40)],
@@ -271,7 +272,7 @@ def only_feedback(expert, student, path):
 
         datatype_joints = problem[1]
 
-        expert_sub_data = expert_data[:10] + expert_data[min(aurelien_data[problem[0]])-1:max(aurelien_data[problem[0]])]
+        expert_sub_data = expert_data[:10] + expert_data[min(expert_data_repartion[problem[0]])-1:max(expert_data_repartion[problem[0]])]
 
         for algo, param in algos.items():
             print(problem[0])
@@ -296,7 +297,7 @@ def only_feedback(expert, student, path):
             std_features = min_max_scaler.fit_transform(std_features)
 
         # Compute the centroid of the student's features (Euclidean distance for now)
-        std_centroid = get_centroid_student(std_features)
+        std_centroid = get_centroid(std_features)
 
         # For the rest of the algorithm, if there are more than 2 features,
         # we run the data through a PCA for the next steps
@@ -323,7 +324,7 @@ def only_feedback(expert, student, path):
             distances_to_centroid[i] = distance/summ
 
         # Get the most probable cluster label for expert data
-        clusters_label = get_cluster_label(expert_sub_data, aurelien_data, model[0].labels_)
+        clusters_label = get_cluster_label(expert_sub_data, expert_data_repartion, model[0].labels_)
         # # # # # # # # # # # # # # # # # # # # # # # # # # # #
         #TODO: display numbers of motions in labelled clusters#
         # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -342,7 +343,7 @@ def only_feedback(expert, student, path):
                                       clusters_names=clusters_names,
                                       algo_name=problem[0],
                                       std_data=std_features,
-                                      std_centroid=get_centroid_student(std_features),
+                                      std_centroid=get_centroid(std_features),
                                       distance_to_line=distance_from_line)
 
         clus_prob.trapezoid = get_trapezoid(model, std_centroid)
@@ -406,7 +407,7 @@ def only_feedback_new_descriptors(expert, student, path):
     scale = False
     normalise = False
 
-    aurelien_data = {'good': [x+1 for x in range(10)],
+    expert_data_repartion = {'good': [x+1 for x in range(10)],
                      'leaning': [x+1 for x in range(10, 19)],
                      'javelin': [x+1 for x in range(20, 30)],
                      'align_arm': [x+1 for x in range(30, 40)],
@@ -421,7 +422,7 @@ def only_feedback_new_descriptors(expert, student, path):
 
         datatype_joints = problem[1]
 
-        expert_sub_data = expert_data[:10] + expert_data[min(aurelien_data[problem[0]])-1:max(aurelien_data[problem[0]])]
+        expert_sub_data = expert_data[:10] + expert_data[min(expert_data_repartion[problem[0]])-1:max(expert_data_repartion[problem[0]])]
 
         # if problem[0] == 'javelin':
             # del expert_sub_data[16]
@@ -461,18 +462,7 @@ def only_feedback_new_descriptors(expert, student, path):
             std_features = min_max_scaler.fit_transform(std_features)
 
         # Compute the centroid of the student's features (Euclidean distance for now)
-        std_centroid = get_centroid_student(std_features)
-
-        # For the rest of the algorithm, if there are more than 2 features,
-        # we run the data through a PCA for the next steps
-        if len(model[0].cluster_centers_[0]) > 2:
-            pca = PCA(n_components=2, copy=True)
-            pca.fit(model[2])
-
-            model[2] = pca.transform(model[2])
-            model[0].cluster_centers_ = pca.transform(model[0].cluster_centers_)
-            std_centroid = pca.transform(std_centroid.reshape(1, -1))[0]
-            std_features = pca.transform(std_features)
+        std_centroid = get_centroid(std_features)
 
         # Compute the distance from the student's centroid to the expert's ones
         distances_to_centroid = compute_distance(model[0].cluster_centers_, std_centroid)
@@ -488,7 +478,7 @@ def only_feedback_new_descriptors(expert, student, path):
             distances_to_centroid[i] = distance/summ
 
         # Get the most probable cluster label for expert data
-        clusters_label = get_cluster_label(expert_sub_data, aurelien_data, model[0].labels_)
+        clusters_label = get_cluster_label(expert_sub_data, expert_data_repartion, model[0].labels_)
         # # # # # # # # # # # # # # # # # # # # # # # # # # # #
         #TODO: display numbers of motions in labelled clusters#
         # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -499,6 +489,17 @@ def only_feedback_new_descriptors(expert, student, path):
 
         clusters_names = get_cluster_labels_from_data_repartition(model[0].labels_, model[0].cluster_centers_)
 
+        # For the rest of the algorithm, if there are more than 2 features,
+        # we run the data through a PCA for the next steps
+        if len(model[0].cluster_centers_[0]) > 2:
+            pca = PCA(n_components=2, copy=True)
+            pca.fit(model[2])
+
+            model[2] = pca.transform(model[2])
+            model[0].cluster_centers_ = pca.transform(model[0].cluster_centers_)
+            std_centroid = pca.transform(std_centroid.reshape(1, -1))[0]
+            std_features = pca.transform(std_features)
+
         clus_prob = ClusteringProblem(problem=problem[0],
                                       model=model[0], features=model[2],
                                       labels=model[0].labels_,
@@ -507,7 +508,7 @@ def only_feedback_new_descriptors(expert, student, path):
                                       clusters_names=clusters_names,
                                       algo_name=problem[0],
                                       std_data=std_features,
-                                      std_centroid=get_centroid_student(std_features),
+                                      std_centroid=get_centroid(std_features),
                                       distance_to_line=distance_from_line)
 
         clus_prob.trapezoid = get_trapezoid(model, std_centroid)
@@ -518,6 +519,10 @@ def only_feedback_new_descriptors(expert, student, path):
 
     give_two_advices(clustering_problems)
     plot_all_defaults(clustering_problems, only_centroids=True)
+
+    all_features_to_extract = merge_list_of_dictionnaries([x[1] for x in datatype_joints_list])
+    expert_good_data = expert_data[min(expert_data_repartion['good'])-1:max(expert_data_repartion['good'])]
+    plot_good_vs_student_all_data(expert_good_data, student_data, algos, all_features_to_extract, only_centroids=True)
 
 
 
@@ -580,7 +585,7 @@ def compute_distance_to_clusters(expert, student, path, begin, end):
     scale = False
     normalise = False
 
-    aurelien_data = {'good': [x+1 for x in range(10)],
+    expert_data_repartion = {'good': [x+1 for x in range(10)],
                      'leaning': [x+1 for x in range(10, 19)],
                      'javelin': [x+1 for x in range(20, 30)],
                      'align_arm': [x+1 for x in range(30, 40)],
@@ -595,7 +600,7 @@ def compute_distance_to_clusters(expert, student, path, begin, end):
 
         datatype_joints = problem[1]
 
-        expert_sub_data = expert_data[:10] + expert_data[min(aurelien_data[problem[0]])-1:max(aurelien_data[problem[0]])]
+        expert_sub_data = expert_data[:10] + expert_data[min(expert_data_repartion[problem[0]])-1:max(expert_data_repartion[problem[0]])]
 
         for algo, param in algos.items():
             #print(problem[0])
@@ -620,7 +625,7 @@ def compute_distance_to_clusters(expert, student, path, begin, end):
             std_features = min_max_scaler.fit_transform(std_features)
 
         # Compute the centroid of the student's features (Euclidean distance for now)
-        std_centroid = get_centroid_student(std_features)
+        std_centroid = get_centroid(std_features)
 
         # For the rest of the algorithm, if there are more than 2 features,
         # we run the data through a PCA for the next steps
@@ -647,7 +652,7 @@ def compute_distance_to_clusters(expert, student, path, begin, end):
             distances_to_centroid[i] = distance/summ
 
         # Get the most probable cluster label for expert data
-        clusters_label = get_cluster_label(expert_sub_data, aurelien_data, model[0].labels_)
+        clusters_label = get_cluster_label(expert_sub_data, expert_data_repartion, model[0].labels_)
         # # # # # # # # # # # # # # # # # # # # # # # # # # # #
         #TODO: display numbers of motions in labelled clusters#
         # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -719,7 +724,7 @@ def rotated_feedback_comparison(expert, student, path, begin, end):
     scale = False
     normalise = False
 
-    aurelien_data = {'good': [x+1 for x in range(10)],
+    expert_data_repartion = {'good': [x+1 for x in range(10)],
                      'leaning': [x+1 for x in range(10, 19)],
                      'javelin': [x+1 for x in range(20, 30)],
                      'align_arm': [x+1 for x in range(30, 40)],
@@ -734,7 +739,7 @@ def rotated_feedback_comparison(expert, student, path, begin, end):
 
         datatype_joints = problem[1]
 
-        expert_sub_data = expert_data[:10] + expert_data[min(aurelien_data[problem[0]])-1:max(aurelien_data[problem[0]])]
+        expert_sub_data = expert_data[:10] + expert_data[min(expert_data_repartion[problem[0]])-1:max(expert_data_repartion[problem[0]])]
 
         for algo, param in algos.items():
             print(problem[0])
@@ -759,7 +764,7 @@ def rotated_feedback_comparison(expert, student, path, begin, end):
             std_features = min_max_scaler.fit_transform(std_features)
 
         # Compute the centroid of the student's features (Euclidean distance for now)
-        std_centroid = get_centroid_student(std_features)
+        std_centroid = get_centroid(std_features)
 
         # For the rest of the algorithm, if there are more than 2 features,
         # we run the data through a PCA for the next steps
@@ -786,7 +791,7 @@ def rotated_feedback_comparison(expert, student, path, begin, end):
             distances_to_centroid[i] = distance/summ
 
         # Get the most probable cluster label for expert data
-        clusters_label = get_cluster_label(expert_sub_data, aurelien_data, model[0].labels_)
+        clusters_label = get_cluster_label(expert_sub_data, expert_data_repartion, model[0].labels_)
         # # # # # # # # # # # # # # # # # # # # # # # # # # # #
         #TODO: display numbers of motions in labelled clusters#
         # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -805,7 +810,7 @@ def rotated_feedback_comparison(expert, student, path, begin, end):
                                       clusters_names=clusters_names,
                                       algo_name=problem[0],
                                       std_data=std_features,
-                                      std_centroid=get_centroid_student(std_features),
+                                      std_centroid=get_centroid(std_features),
                                       distance_to_line=distance_from_line)
 
         clus_prob.trapezoid = get_trapezoid(model, std_centroid)
@@ -936,7 +941,7 @@ def test_student_list():
         scale = False
         normalise = False
 
-        aurelien_data = {'good': [x+1 for x in range(10)],
+        expert_data_repartion = {'good': [x+1 for x in range(10)],
                          'leaning': [x+1 for x in range(10, 19)],
                          'javelin': [x+1 for x in range(20, 30)],
                          'align_arm': [x+1 for x in range(30, 40)],
@@ -1051,6 +1056,7 @@ if __name__ == '__main__':
     student = Person(r'', 'JonardA', 'Right', 'Jonard_Antoine')
     path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/students/mixed'
     path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/test/noneed_rotated/mixed'
+    # path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/clarete/mixed'
     # only_feedback(expert, student, path)
     only_feedback_new_descriptors(expert, student, path)
 
