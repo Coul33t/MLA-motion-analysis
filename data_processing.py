@@ -12,7 +12,7 @@ import pdb
 import numpy as np
 
 from sklearn.cluster import estimate_bandwidth
-from sklearn.preprocessing import RobustScaler, MinMaxScaler
+from sklearn.preprocessing import RobustScaler, MinMaxScaler, normalize
 from sklearn.decomposition import PCA
 
 # Personnal packages
@@ -1033,7 +1033,14 @@ def plot_good_vs_student_all_data(expert_good_data, student_data, algorithm_and_
     exp_centroid = get_centroid(exp_features)
     std_centroid = get_centroid(std_features)
 
+
+
     if len(exp_centroid) > 2:
+        std_features = normalize(std_features)
+        exp_features = normalize(exp_features)
+        std_centroid = normalize(std_centroid.reshape(1, -1))[0]
+        exp_centroid = normalize(exp_centroid.reshape(1, -1))[0]
+
         pca = PCA(n_components=2, copy=True)
         pca.fit(exp_features)
 

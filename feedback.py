@@ -4,6 +4,7 @@ from shutil import rmtree
 from distutils.dir_util import copy_tree
 
 from sklearn.decomposition import PCA
+from sklearn.preprocessing import normalize
 
 from data_import import json_import
 
@@ -492,6 +493,11 @@ def only_feedback_new_descriptors(expert, student, path):
         # For the rest of the algorithm, if there are more than 2 features,
         # we run the data through a PCA for the next steps
         if len(model[0].cluster_centers_[0]) > 2:
+            model[2] = normalize(model[2])
+            model[0].cluster_centers_ = normalize(model[0].cluster_centers_)
+            std_centroid = normalize(std_centroid.reshape(1, -1))[0]
+            exp_centroid = normalize(exp_centroid.reshape(1, -1))[0]
+
             pca = PCA(n_components=2, copy=True)
             pca.fit(model[2])
 
