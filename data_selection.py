@@ -1,5 +1,5 @@
 import numpy as np
-
+import sys
 from tools import flatten_list
 
 def data_gathering(data, datatype_joints: dict):
@@ -41,7 +41,11 @@ def data_gathering(data, datatype_joints: dict):
                             joint['joint'] = joint['joint'].replace('Right', motion.laterality)
                         elif motion.laterality == 'Right':
                             joint['joint'] = joint['joint'].replace('Left', motion.laterality)
-                    tmp_features_list.append(motion.get_datatype(datatype).get_joint_values(joint['joint']))
+                    try:
+                        tmp_features_list.append(motion.get_datatype(datatype).get_joint_values(joint['joint']))
+                    except AttributeError:
+                        print(f'ERROR: {datatype} not present in {motion.name}.')
+                        sys.exit()
 
             else:
                 if joints['laterality']:
