@@ -30,6 +30,40 @@ from visualisation.agglomerative_dendogram import plot_dendrogram
 import constants as cst
 #TODO : better data visualization function
 
+def fast_savgol_visualisation():
+    name = 'SeniowE'
+    from feedback import import_data
+    path = r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\alldartsdescriptors\students_2\SeniowETEST'
+    student_data = import_data(path, name)
+    datatype_joints_list = []
+    datatype_joints = {'SpeedNorm': [{'joint': 'RightHand', 'laterality': False}]}
+    from data_processing import data_gathering
+    std_features = data_gathering(student_data, datatype_joints)[0]
+
+    fig = plt.figure()
+    ls = fig.add_subplot(111)
+
+    ls.set_xlabel('Time (s)')
+    ls.set_ylabel('Linear speed (m/s)')
+
+    x = np.linspace(0, len(std_features), len(std_features), endpoint=False)
+
+    savgol_3 = savgol_filter(std_features, 21, 3)
+    savgol_5 = savgol_filter(std_features, 51, 3)
+
+    color=iter(cm.rainbow(np.linspace(0,3,len(std_features))))
+
+    ls.plot(x, std_features, color='blue')
+    ls.plot(x, savgol_5, color='red')
+    ls.plot(x, savgol_3, color='green')
+
+    current_color = next(color)
+    blue_patch = mpatches.Patch(color=current_color, label='Signal original')
+    red_patch = mpatches.Patch(color=current_color, label='Savgol, taille fenêtre = 51')
+    green_patch = mpatches.Patch(color=current_color, label='Savgol, taille fenêtre = 21')
+    plt.legend(handles=[blue_patch, green_patch, red_patch])
+    plt.show()
+
 
 def visualization(motion_type="gimbal", joints_to_visualize=None, savgol=False):
     folder_path_lin = r'C:\Users\quentin\Documents\Programmation\C++\MLA\Data\Speed\Damien\TEST_CUT_MAX'
@@ -841,7 +875,8 @@ def test_n_curves():
     simple_plot_curves(data)
 
 if __name__ == '__main__':
-    test_n_curves()
+    fast_savgol_visualisation()
+    # test_n_curves()
     # from data_import import json_import
     # path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/testaccbugandjerk/'
     # yo = json_import(path, 'Leo_1Char00')
