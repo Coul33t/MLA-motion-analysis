@@ -15,10 +15,10 @@ left_joints_list = [['LeftHand'],
                     ['LeftHand', 'LeftForeArm', 'LeftArm', 'LeftShoulder', 'Neck', 'Hips']]
 
 neutral_joints_list = [['Hand'],
-                      ['Hand', 'ForeArm'],
-                      ['Hand', 'ForeArm', 'Arm'],
-                      ['Hand', 'ForeArm', 'Arm', 'Shoulder'],
-                      ['Hand', 'ForeArm', 'Arm', 'Shoulder', 'Neck', 'Hips']]
+                       ['Hand', 'ForeArm'],
+                       ['Hand', 'ForeArm', 'Arm'],
+                       ['Hand', 'ForeArm', 'Arm', 'Shoulder'],
+                       ['Hand', 'ForeArm', 'Arm', 'Shoulder', 'Neck', 'Hips']]
 
 data_types_combination = [['BegMaxEndSpeedNorm'],
                           ['BegMaxEndSpeedx',     'BegMaxEndSpeedy',    'BegMaxEndSpeedz'],
@@ -51,11 +51,11 @@ data_types_combination = [['BegMaxEndSpeedNorm'],
                           ]
 
 people_names_O = [['Aous', 'left'], ['Damien', 'left'], ['Esteban', 'right'], ['Guillaume', 'right'],
-                ['Ines', 'right'], ['Iza', 'right'], ['Ludovic', 'right'], ['Marc', 'right'],
-                ['Oussema', 'right'], ['Pierre', 'right'], ['Sebastien', 'right'],
-                ['Vincent', 'right'], ['Yann', 'right'],
-                [['Aous', 'Damien'], 'left'],
-                [['Esteban', 'Guillaume', 'Ines', 'Iza', 'Ludovic', 'Marc', 'Oussema', 'Pierre', 'Sebastien', 'Vincent', 'Yann'], 'right']]
+                 ['Ines', 'right'], ['Iza', 'right'], ['Ludovic', 'right'], ['Marc', 'right'],
+                 ['Oussema', 'right'], ['Pierre', 'right'], ['Sebastien', 'right'],
+                 ['Vincent', 'right'], ['Yann', 'right'],
+                 [['Aous', 'Damien'], 'left'],
+                 [['Esteban', 'Guillaume', 'Ines', 'Iza', 'Ludovic', 'Marc', 'Oussema', 'Pierre', 'Sebastien', 'Vincent', 'Yann'], 'right']]
 
 
 people_names = [['Aous', 'left'], ['Damien', 'left'], ['Esteban', 'right'], ['Guillaume', 'right'],

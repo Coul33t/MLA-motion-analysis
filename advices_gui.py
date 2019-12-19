@@ -93,7 +93,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Motion Learning Analytics"))
         self.pushbutton_import_student.setText(_translate("MainWindow", "Student"))
         self.pushbutton_expert_import.setText(_translate("MainWindow", "Expert"))
         self.pushbutton_compute_diff.setText(_translate("MainWindow", "Compare"))

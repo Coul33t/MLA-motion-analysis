@@ -5,8 +5,6 @@ from dataclasses import dataclass
 
 from collections import OrderedDict
 
-import pdb
-
 @dataclass
 class Person:
     def __init__(self, path, name, laterality, full_name=None):

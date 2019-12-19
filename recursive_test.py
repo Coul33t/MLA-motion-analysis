@@ -565,7 +565,7 @@ def recursive_clustering_test_stop(original_data, original_data_classes,
         # For each cluster
         for i,rep in enumerate(to_keep['idx_c']):
 
-            # If the cluster must not be process, pass
+            # If the cluster must not be processed, pass
             if cluster_to_process[i] == 0:
                 if debug:
                     print(f'NO NEED TO PROCESS CLUSTER {i} (REP > 0.75)')
