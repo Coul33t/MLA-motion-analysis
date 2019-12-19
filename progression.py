@@ -20,6 +20,8 @@ from data_visualization import plot_progression
 
 from feedback_tools import *
 
+from tools import Person
+
 def import_data(path, import_find):
     original_data = []
 
@@ -81,6 +83,31 @@ def progression(expert, student, tmp_path):
     #                                  other joint, laterality or not}],
     #                    Other descriptor: [{joint, laterality or not}]
     #                   }
+    # datatype_joints_list = []
+
+    # datatype_joints_list.append(['leaning', {'MeanSpeed': [{'joint': 'LeftShoulder', 'laterality': False},
+    #                                                        {'joint': 'RightShoulder', 'laterality': False}]
+    #                             }])
+
+    # datatype_joints_list.append(['elbow_move', {'MeanSpeed': [{'joint': 'LeftArm', 'laterality': True},
+    #                                                           {'joint': 'LeftShoulder', 'laterality': True}]
+    #                             }])
+
+    # datatype_joints_list.append(['javelin', {'PosX': [{'joint': 'LeftHand', 'laterality': True},
+    #                                                   {'joint': 'Head',     'laterality': False}],
+    #                                          'PosY': [{'joint': 'LeftHand', 'laterality': True},
+    #                                                   {'joint': 'Head',     'laterality': False}],
+    #                                          'PosZ': [{'joint': 'LeftHand', 'laterality': True},
+    #                                                   {'joint': 'Head',     'laterality': False}]
+    #                                         }])
+
+    # datatype_joints_list.append(['align_arm', {'BoundingBoxMinusX': [{'joint': 'RightShoulderRightArmRightForeArmRightHand', 'laterality': True}],
+    #                                            'BoundingBoxPlusX':  [{'joint': 'RightShoulderRightArmRightForeArmRightHand', 'laterality': True}],
+    #                                            'BoundingBoxMinusY': [{'joint': 'RightShoulderRightArmRightForeArmRightHand', 'laterality': True}],
+    #                                            'BoundingBoxPlusY':  [{'joint': 'RightShoulderRightArmRightForeArmRightHand', 'laterality': True}],
+    #                                            'BoundingBoxMinusZ': [{'joint': 'RightShoulderRightArmRightForeArmRightHand', 'laterality': True}],
+    #                                            'BoundingBoxPlusZ':  [{'joint': 'RightShoulderRightArmRightForeArmRightHand', 'laterality': True}]
+    #                                           }])
     datatype_joints_list = []
 
     datatype_joints_list.append(['leaning', {'MeanSpeed': [{'joint': 'LeftShoulder', 'laterality': False},
@@ -91,20 +118,13 @@ def progression(expert, student, tmp_path):
                                                               {'joint': 'LeftShoulder', 'laterality': True}]
                                 }])
 
-    datatype_joints_list.append(['javelin', {'PosX': [{'joint': 'LeftHand', 'laterality': True},
-                                                      {'joint': 'Head',     'laterality': False}],
-                                             'PosY': [{'joint': 'LeftHand', 'laterality': True},
-                                                      {'joint': 'Head',     'laterality': False}],
-                                             'PosZ': [{'joint': 'LeftHand', 'laterality': True},
-                                                      {'joint': 'Head',     'laterality': False}]
-                                            }])
+    datatype_joints_list.append(['javelin', {'DistanceX': [{'joint': 'distanceRightHandHead', 'laterality': True}],
+                                             'DistanceY': [{'joint': 'distanceRightHandHead', 'laterality': True}],
+                                             'DistanceZ': [{'joint': 'distanceRightHandHead', 'laterality': True}]
+                                             }])
 
-    datatype_joints_list.append(['align_arm', {'BoundingBoxMinusX': [{'joint': 'RightShoulderRightArmRightForeArmRightHand', 'laterality': True}],
-                                               'BoundingBoxPlusX':  [{'joint': 'RightShoulderRightArmRightForeArmRightHand', 'laterality': True}],
-                                               'BoundingBoxMinusY': [{'joint': 'RightShoulderRightArmRightForeArmRightHand', 'laterality': True}],
-                                               'BoundingBoxPlusY':  [{'joint': 'RightShoulderRightArmRightForeArmRightHand', 'laterality': True}],
-                                               'BoundingBoxMinusZ': [{'joint': 'RightShoulderRightArmRightForeArmRightHand', 'laterality': True}],
-                                               'BoundingBoxPlusZ':  [{'joint': 'RightShoulderRightArmRightForeArmRightHand', 'laterality': True}]
+    datatype_joints_list.append(['align_arm', {'BoundingBoxWidthMean': [{'joint': 'HeadRightShoulderRightArmRightForeArmRightHand', 'laterality': True}],
+                                               'BoundingBoxWidthStd': [{'joint': 'HeadRightShoulderRightArmRightForeArmRightHand', 'laterality': True}]
                                               }])
 
 
@@ -133,9 +153,15 @@ def progression(expert, student, tmp_path):
         for j, problem in enumerate(datatype_joints_list):
             print(f"Doing {problem[0]} problem for the {student_sep[current_throws]} throws")
 
+
             datatype_joints = problem[1]
 
             expert_sub_data = expert_data[:10] + expert_data[min(aurelien_data[problem[0]])-1:max(aurelien_data[problem[0]])]
+
+            if problem[0] == 'align_arm':
+                del expert_sub_data[15]
+                del expert_sub_data[9]
+                del expert_sub_data[8]
 
             for algo, param in algos.items():
                 print(problem[0])
@@ -160,7 +186,7 @@ def progression(expert, student, tmp_path):
                 std_features = min_max_scaler.fit_transform(std_features)
 
             # Compute the centroid of the student's features (Euclidean distance for now)
-            std_centroid = get_centroid_student(std_features)
+            std_centroid = get_centroid(std_features)
 
             # For the rest of the algorithm, if there are more than 2 features,
             # we run the data through a PCA for the next steps
@@ -201,7 +227,7 @@ def progression(expert, student, tmp_path):
                                           clusters_names=clusters_names,
                                           algo_name=problem[0],
                                           std_data=std_features,
-                                          std_centroid=get_centroid_student(std_features),
+                                          std_centroid=get_centroid(std_features),
                                           distance_to_line=distance_from_line)
 
             clus_prob.trapezoid = get_trapezoid(model, std_centroid)
@@ -216,8 +242,8 @@ def progression(expert, student, tmp_path):
     plot_progression(clustering_problems, title=title_to_print, text=None)
 
 if __name__ == "__main__":
-    expert = Person(r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/aurelien', 'aurel', 'Right')
-    student = Person(r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/students/Sicard_Teddy', 'SicardT', 'Right')
+    expert = Person(r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/students_2/aurel', 'aurel', 'Right')
+    student = Person(r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/students_2/FromontM', 'FromontM', 'Right')
     tmp_path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/tmp_path'
     progression(expert, student, tmp_path)
     # if copy_data(expert.path, student.path, tmp_path, student_to_copy=[x for x in range(9)]):
