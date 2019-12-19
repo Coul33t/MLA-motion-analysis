@@ -658,7 +658,7 @@ def run_clustering(original_data, validate_data=False,
     # to the number of clusters in the ground truth
     # If we're working only with the success, we have no ground truth
     # so we can't compute these scores
-    if true_labels and k == len(np.unique(true_labels)):
+    if true_labels and params['n_clusters'] == len(np.unique(true_labels)):
         metrics.update(compute_all_gt_metrics(res.labels_, true_labels))
 
     metrics.update(compute_all_clustering_metrics(features, res.labels_))
@@ -1034,8 +1034,9 @@ def plot_good_vs_student_all_data(expert_good_data, student_data, algorithm_and_
     std_centroid = get_centroid(std_features)
 
 
-
     if len(exp_centroid) > 2:
+        # Should never go here if called from " feedback " since normalisation
+        # and PCA is done beforehand
         std_features = normalize(std_features)
         exp_features = normalize(exp_features)
         std_centroid = normalize(std_centroid.reshape(1, -1))[0]
@@ -1060,3 +1061,33 @@ def plot_good_vs_student_all_data(expert_good_data, student_data, algorithm_and_
 
     plot_all_defaults_at_once(exp_features, exp_centroid, circle_expert, std_features, std_centroid, only_centroids=only_centroids)
 
+
+def good_and_bad_vs_student_all_data(expert_good_data, expert_bad_data, student_data, algorithm_and_parameter, datatype_joints_list, only_centroids=False):
+
+    std_features = data_gathering(student_data, datatype_joints_list)
+    exp_good_features = data_gathering(expert_good_data, datatype_joints_list)
+    exp_bad_features = data_gathering(expert_bad_data, datatype_joints_list)
+
+    exp_good_centroid = get_centroid(exp_good_features)
+    exp_bad_centroid = get_centroid(exp_bad_features)
+    std_centroid = get_centroid(std_features)
+
+    max_dst_good_exp = max(max(distance.cdist([exp_good_centroid], exp_good_features, 'euclidean')))
+    med_dst_good_exp = intra_cluster_dst(exp_good_centroid, exp_good_features)
+
+    max_dst_bad_exp = max(max(distance.cdist([exp_bad_centroid], exp_bad_features, 'euclidean')))
+    med_dst_bad_exp = intra_cluster_dst(exp_bad_centroid, exp_bad_features)
+
+    circle_good_expert = Circle(exp_good_centroid, max_dst_good_exp,
+        limits={'center': exp_good_centroid, 'radius_max':max_dst_good_exp,
+                'radius_med':(max_dst_good_exp + med_dst_good_exp) / 2,
+                'radius_min':med_dst_good_exp},
+        is_good=False)
+
+    circle_bad_expert = Circle(exp_bad_centroid, max_dst_bad_exp,
+        limits={'center': exp_bad_centroid, 'radius_max':max_dst_bad_exp,
+                'radius_med':(max_dst_bad_exp + med_dst_bad_exp) / 2,
+                'radius_min':med_dst_bad_exp},
+        is_good=False)
+
+    print(f'PCA max dst good: {max_dst_good_exp}\nPCA max dst bad: {max_dst_bad_exp}')
