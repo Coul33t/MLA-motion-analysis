@@ -6,16 +6,14 @@ import csv
 from dataclasses import dataclass
 
 import numpy as np
-import pandas as pd
 
 from scipy.spatial import distance
 
 import matplotlib.path as mplPath
 
-from shutil import rmtree
-
 from constants import problemes_et_solutions as problems_and_advices
 
+from sklearn.decomposition import PCA
 
 @dataclass
 class Circle:
@@ -73,7 +71,7 @@ def compute_distance(centroids, feature):
 
 def dst_pts(pt1, pt2):
     if len(pt1) == 1:
-        return abs(pt2-pt1)[0]
+        return abs(pt2 - pt1)[0]
 
     return sqrt(pow(pt2[0] - pt1[0], 2) + pow(pt2[1] - pt1[1], 2))
 
@@ -133,9 +131,20 @@ def get_circle(result, point):
     if not is_in_cluster:
         is_in_cluster = is_in_circle(point, centroids[1], max_dst[1])
 
-    circle_good = Circle(centroids[0], max_dst[0], limits={'center': centroids[0], 'radius_max':max_dst[0], 'radius_med':(max_dst[0] + med_dst[0]) / 2, 'radius_min':med_dst[0]}, is_good=is_good)
-    circle_bad = Circle(centroids[1], max_dst[1], limits={'center': centroids[1], 'radius_max':max_dst[1], 'radius_med':(max_dst[1] + med_dst[1]) / 2, 'radius_min':med_dst[1]}, is_good=not is_good)
-    # print(f"Point is in a cluster: {is_in_cluster}")
+    circle_good = Circle(centroids[0], max_dst[0],
+                         limits={'center': centroids[0],
+                                 'radius_max': max_dst[0],
+                                 'radius_med': (max_dst[0] + med_dst[0]) / 2,
+                                 'radius_min': med_dst[0]},
+                         is_good=is_good)
+
+    circle_bad = Circle(centroids[1], max_dst[1],
+                        limits={'center': centroids[1],
+                                'radius_max': max_dst[1],
+                                'radius_med': (max_dst[1] + med_dst[1]) / 2,
+                                'radius_min': med_dst[1]},
+                        is_good=not is_good)
+
     return (circle_good, circle_bad)
 
 def is_in_circle(point, centroid, diameter):
@@ -172,7 +181,7 @@ def get_cluster_label(original_data, original_labels, clustering_labels):
         c_rep.append({x: 0 for x in original_labels.keys()})
         for i, elem in enumerate(clustering_labels):
             if elem == cluster:
-                 c_rep[-1][labelled_data[i]] += 1
+                c_rep[-1][labelled_data[i]] += 1
 
 
     for i, cluster in enumerate(c_rep):
@@ -197,7 +206,7 @@ def get_distance_from_expert_centoids_line(exp_centroids, std_centroid):
     B = pt2['x'] - pt1['x']
     C = (pt1['x'] * pt2['y']) - (pt2['x'] * pt1['y'])
 
-    return abs((A*pt_std['x']) + (B*pt_std['y']) + C) / sqrt(pow(A, 2) + pow(B, 2))
+    return abs((A * pt_std['x']) + (B * pt_std['y']) + C) / sqrt(pow(A, 2) + pow(B, 2))
 
 def mix(distances, c_labels, distance_line_vs_distance_centroids):
     new_dict = {}
@@ -211,7 +220,7 @@ def mix(distances, c_labels, distance_line_vs_distance_centroids):
 
     size_display = 40
     char = '#'
-    place = floor((size_display/100) * (100 * new_dict['good']))
+    place = floor((size_display / 100) * (100 * new_dict['good']))
 
     print(f"{keys_to_display[0]} [", end='')
     for i in range(size_display):
@@ -238,7 +247,8 @@ def get_closeness_to_clusters(c_labels, features, cps, problem, name='', to_prin
 
     if to_print:
         for sample in lst:
-            print(f"{sample['sample']} {sample['good']} {sample[problem]} {problem}")
+            # print(f"{sample['sample']} {sample['good']} {sample[problem]} {problem}")
+            print(f"{sample['good']} {sample[problem]}")
 
     if to_csv:
         path_to_file = f'{problem}_output.csv'
@@ -251,6 +261,131 @@ def get_closeness_to_clusters(c_labels, features, cps, problem, name='', to_prin
             data_distance_writer.writerow('')
             for sample in lst:
                 data_distance_writer.writerow([sample['good'], sample[problem]])
+
+def get_global_closeness_to_good_cluster(cps, removed_values, name='', to_print=True, to_csv=True):
+    # Take all features from 4 problems
+    # normalise by mean for each dimension for each problem
+    # merge features vectors
+    # compute distance
+
+    # HUGE PROBLEM : due to the clustering, good and bad clusters don't have
+    # the same amount of expert data in each from one problem to another...
+    # Features Normalisation
+    normalised_features = {}
+
+    removed_values_set = set()
+    for key in removed_values:
+        removed_values_set.update(removed_values[key])
+
+    removed_values_set = sorted(removed_values_set, reverse=True)
+
+    # for each problem
+    for cp in cps:
+        # Concatenate expert and student features, while deleting the expert
+        # outliers
+
+        all_features = np.concatenate((np.delete(cp.features, removed_values_set, axis=0), cp.std_data))
+        exp_features_number = len(cp.features)
+
+        # Divide each feature by the mean of each axis
+        all_features /= np.mean(all_features, axis=0)
+
+        # Put them into a dict (keys: expert, student)
+        normalised_features[cp.problem] = {}
+
+        labels_to_use = cp.labels.copy()
+        #TODO: not ad-hoc
+        if cp.problem == 'align_arm':
+            labels_to_use = np.delete(labels_to_use, -1)
+
+        if cp.problem == 'leaning':
+            labels_to_use = np.delete(labels_to_use, [7, 8, 14])
+
+        else:
+            labels_to_use = np.delete(labels_to_use, [8, 9, 15, 19])
+
+        good_idx = [x for x, val in enumerate(cp.labels) if val == 1]
+        bad_idx = [x for x, val in enumerate(cp.labels) if val == 0]
+
+        # Swap them (because I know that idx from 0 to 10 are the good ones)
+        if good_idx[0] > bad_idx[0]:
+            good_idx, bad_idx = bad_idx, good_idx
+
+        normalised_features[cp.problem]['expert_good'] = all_features[good_idx]
+        normalised_features[cp.problem]['expert_bad'] = all_features[bad_idx]
+        normalised_features[cp.problem]['student'] = all_features[exp_features_number:]
+
+    merged_vectors = {'expert_good': None, 'expert_bad': None, 'student': None}
+
+    # 3 outputs : expert good values / bad values, std values
+    for key in merged_vectors.keys():
+        merged_features = []
+
+        for problem in normalised_features.keys():
+            if not isinstance(merged_features, np.ndarray):
+                merged_features = normalised_features[problem][key].copy()
+            else:
+                try:
+                    np.concatenate((merged_features, normalised_features[problem][key].copy()), axis=1)
+                except:
+                    breakpoint()
+
+        breakpoint()
+
+def get_global_closeness_to_good_cluster_2(cps, name='', to_print=True, to_csv=True):
+    # Take all features from 4 problems
+    # normalise by mean for each dimension for each problem
+    # merge features vectors
+    # compute distance
+
+    # Features Normalisation
+    normalised_features = {}
+
+    # for each problem
+    for cp in cps:
+        # Concatenate expert and student features, while deleting the expert
+        # outliers
+        all_features = np.concatenate((cp.features[:8], cp.std_data))
+        exp_features_number = 8
+
+        # Divide each feature by the mean of each axis
+        all_features /= np.mean(all_features, axis=0)
+
+        # Put them into a dict (keys: expert, student)
+        normalised_features[cp.problem] = {}
+
+        normalised_features[cp.problem]['expert_good'] = all_features[:exp_features_number]
+        normalised_features[cp.problem]['student'] = all_features[exp_features_number:]
+
+    merged_vectors = {'expert_good': None, 'student': None}
+
+    # 3 outputs : expert good values / bad values, std values
+    for key in merged_vectors.keys():
+        merged_features = []
+
+        for problem in normalised_features.keys():
+            if not isinstance(merged_features, np.ndarray):
+                merged_features = normalised_features[problem][key].copy()
+            else:
+                merged_features = np.concatenate((merged_features, normalised_features[problem][key].copy()), axis=1)
+
+        merged_vectors[key] = merged_features.copy()
+
+
+    pca = PCA(n_components=2, copy=True)
+    full_data = np.concatenate((merged_vectors['expert_good'], merged_vectors['student']))
+    pca.fit(full_data)
+
+    merged_vectors['expert_good'] = pca.transform(merged_vectors['expert_good'])
+    merged_vectors['student'] = pca.transform(merged_vectors['student'])
+
+    expert_centroid = get_centroid(merged_vectors['expert_good'])
+
+    dst = [dst_pts(expert_centroid, x) for x in merged_vectors['student']]
+
+    return dst
+
+
 
 def csv_merger(path, name=None):
     # csv_align_arm = open(path + f'{name}_align_arm_output.csv')
@@ -329,8 +464,8 @@ def give_two_advices(clustering_problems):
     second_advice_to_give = None
     # Candidates are (In the trapezoid OR in the bad cluster) AND NOT in the good cluster
     candidates = [x for x in clustering_problems if (is_in_trapezoid(x.std_centroid, x.trapezoid.path)
-                                                 or is_in_circle_c(x.std_centroid, next((y for y in x.circles if y.is_good == False), None)))
-                                                     and not is_in_circle_c(x.std_centroid, next((y for y in x.circles if y.is_good == True), None))]
+                                                     or is_in_circle_c(x.std_centroid, next((y for y in x.circles if y.is_good == False), None)))
+                                                 and not is_in_circle_c(x.std_centroid, next((y for y in x.circles if y.is_good == True), None))]
 
     if len(candidates) > 1:
         print(f"2 or more candidates ({len(candidates)})")
@@ -371,7 +506,7 @@ def give_two_advices(clustering_problems):
 
         max_val = max([x.distance_to_line for x in clustering_problems])
         dst_to_line = []
-        for i, x in enumerate(clustering_problems):
+        for x in clustering_problems:
             if (not is_in_trapezoid(x.std_centroid, x.trapezoid.path)
                 and not is_in_circle_c(x.std_centroid, next((y for y in x.circles if y.is_good == True), None))):
                 dst_to_line.append(x.distance_to_line)

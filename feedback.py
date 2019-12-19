@@ -1,16 +1,17 @@
 import os
-import stat
 from shutil import rmtree
 from distutils.dir_util import copy_tree
 
 from sklearn.decomposition import PCA
-from sklearn.preprocessing import normalize
+from sklearn.preprocessing import normalize, MinMaxScaler, RobustScaler, Normalizer
 
 from data_import import json_import
 
 from data_processing import (run_clustering,
-                             data_gathering,
-                             plot_good_vs_student_all_data)
+                             plot_good_vs_student_all_data,
+                             good_and_bad_vs_student_all_data)
+
+from data_selection import data_gathering
 
 from data_visualization import (plot_PCA,
                                 multi_plot_PCA,
@@ -23,6 +24,9 @@ from tools import Person, merge_list_of_dictionnaries
 import constants as cst
 
 from constants import problemes_et_solutions as problems_and_advices
+
+#TODO: use a dict for removed values, instead of ad-hoc value like now
+#      (see compute_distance_to_clusters for an example)
 
 def import_data(path, import_find):
     original_data = []
@@ -128,12 +132,10 @@ def feedback():
 
         # If the expert data has been scaled, do the same for the student's ones
         if scale:
-            from sklearn.preprocessing import RobustScaler
             scaler = RobustScaler()
             std_features = scaler.fit_transform(std_features)
         # Same for normalising
         if normalise:
-            from sklearn.preprocessing import MinMaxScaler
             min_max_scaler = MinMaxScaler()
             std_features = min_max_scaler.fit_transform(std_features)
 
@@ -288,12 +290,10 @@ def only_feedback(expert, student, path):
 
         # If the expert data has been scaled, do the same for the student's ones
         if scale:
-            from sklearn.preprocessing import RobustScaler
             scaler = RobustScaler()
             std_features = scaler.fit_transform(std_features)
         # Same for normalising
         if normalise:
-            from sklearn.preprocessing import MinMaxScaler
             min_max_scaler = MinMaxScaler()
             std_features = min_max_scaler.fit_transform(std_features)
 
@@ -356,7 +356,7 @@ def only_feedback(expert, student, path):
     give_two_advices(clustering_problems)
     plot_all_defaults(clustering_problems, only_centroids=False)
 
-def only_feedback_new_descriptors(expert, student, path):
+def only_feedback_new_descriptors(expert, student, path, display=True):
     folders_path = path
     if folders_path.split('/')[-1] == 'mixed':
         folders_path = "/".join(path.split('/')[:-1])
@@ -403,7 +403,7 @@ def only_feedback_new_descriptors(expert, student, path):
 
 
 
-    # Scaling and normalisaing (nor not) the data
+    # Scaling and normalisaing (or not) the data
     # Useful for DBSCAN for example
     scale = False
     normalise = False
@@ -439,26 +439,34 @@ def only_feedback_new_descriptors(expert, student, path):
             del expert_sub_data[9]
             del expert_sub_data[8]
 
-
         for algo, param in algos.items():
             print(problem[0])
 
+            # true_labels = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            #                1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+            # if problem[0] == 'align_arm':
+            #     true_labels = [0, 0, 0, 0, 0, 0, 0, 0,
+            #                    1, 1, 1, 1, 1, 1, 1, 1, 1]
+            # elif problem[0] == 'leaning':
+            #     true_labels = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            #                    1, 1, 1, 1, 1, 1, 1, 1, 1]
+
             model = run_clustering(expert_sub_data, validate_data=False,
                                    datatype_joints=datatype_joints, algorithm=algo,
-                                   parameters=param, scale_features=scale, normalise_features=normalise,
-                                   true_labels=None, verbose=False, to_file=True, to_json=True, return_data=True)
+                                   parameters=param, scale_features=scale,
+                                   normalise_features=normalise, true_labels=None,
+                                   verbose=False, to_file=True, to_json=True,
+                                   return_data=True)
 
         # Taking the student features
         std_features = data_gathering(student_data, datatype_joints)
 
         # If the expert data has been scaled, do the same for the student's ones
         if scale:
-            from sklearn.preprocessing import RobustScaler
             scaler = RobustScaler()
             std_features = scaler.fit_transform(std_features)
         # Same for normalising
         if normalise:
-            from sklearn.preprocessing import MinMaxScaler
             min_max_scaler = MinMaxScaler()
             std_features = min_max_scaler.fit_transform(std_features)
 
@@ -493,10 +501,10 @@ def only_feedback_new_descriptors(expert, student, path):
         # For the rest of the algorithm, if there are more than 2 features,
         # we run the data through a PCA for the next steps
         if len(model[0].cluster_centers_[0]) > 2:
-            model[2] = normalize(model[2])
-            model[0].cluster_centers_ = normalize(model[0].cluster_centers_)
-            std_centroid = normalize(std_centroid.reshape(1, -1))[0]
-            exp_centroid = normalize(exp_centroid.reshape(1, -1))[0]
+
+            # model[2] = normalize(model[2])
+            # model[0].cluster_centers_ = normalize(model[0].cluster_centers_)
+            # std_centroid = normalize(std_centroid.reshape(1, -1))[0]
 
             pca = PCA(n_components=2, copy=True)
             pca.fit(model[2])
@@ -505,6 +513,15 @@ def only_feedback_new_descriptors(expert, student, path):
             model[0].cluster_centers_ = pca.transform(model[0].cluster_centers_)
             std_centroid = pca.transform(std_centroid.reshape(1, -1))[0]
             std_features = pca.transform(std_features)
+
+        # mixed = np.concatenate((model[2], std_features, model[0].cluster_centers_, std_centroid.reshape(1, -1)), axis=0)
+        # min_max_scaler = MinMaxScaler()
+        # mixed =  min_max_scaler.fit_transform(mixed)
+
+        # model[2] = mixed[0:len(model[2]), :]
+        # std_features = mixed[len(model[2]):len(model[2])+len(std_features), :]
+        # model[0].cluster_centers_ = mixed[len(model[2])+len(std_features):-1, :]
+        # std_centroid = mixed[-1, :]
 
         clus_prob = ClusteringProblem(problem=problem[0],
                                       model=model[0], features=model[2],
@@ -526,25 +543,30 @@ def only_feedback_new_descriptors(expert, student, path):
     give_two_advices(clustering_problems)
     plot_all_defaults(clustering_problems, only_centroids=True)
 
-    all_features_to_extract = merge_list_of_dictionnaries([x[1] for x in datatype_joints_list])
-    expert_good_data = expert_data[min(expert_data_repartion['good'])-1:max(expert_data_repartion['good'])]
-    plot_good_vs_student_all_data(expert_good_data, student_data, algos, all_features_to_extract, only_centroids=True)
+    if display:
+        all_features_to_extract = merge_list_of_dictionnaries([x[1] for x in datatype_joints_list])
+        expert_good_data = expert_data[min(expert_data_repartion['good'])-1:max(expert_data_repartion['good'])]
+        plot_good_vs_student_all_data(expert_good_data, student_data, algos, all_features_to_extract, only_centroids=True)
+
+    if True:
+        expert_bad_data = expert_data[max(expert_data_repartion['good']):]
+        good_and_bad_vs_student_all_data(expert_good_data, expert_bad_data, student_data, algos, all_features_to_extract, only_centroids=True)
 
 
 
-def compute_distance_to_clusters(expert, student, path, begin, end):
+def compute_distance_to_clusters(expert, student, path, begin, end, fullname=True):
     folders_path = path
     if folders_path.split('/')[-1] == 'mixed':
         folders_path = "/".join(path.split('/')[:-1])
 
-    if not take_specific_data(folders_path, student, expert, begin=begin, end=end):
+    if not take_specific_data(folders_path, student, expert, begin=begin, end=end, fullname=fullname):
         print(f'ERROR: {folders_path} does not exists')
         return
 
     # Expert Data
-    expert_data = import_data(path, expert.name)
+    expert_data = import_data(path + 'mixed', expert.name)
     # Student data
-    student_data = import_data(path, student.name)
+    student_data = import_data(path + 'mixed', student.name)
 
     # Setting the laterality
     for motion in expert_data:
@@ -568,20 +590,13 @@ def compute_distance_to_clusters(expert, student, path, begin, end):
                                                               {'joint': 'LeftShoulder', 'laterality': True}]
                                 }])
 
-    datatype_joints_list.append(['javelin', {'PosX': [{'joint': 'LeftHand', 'laterality': True},
-                                                      {'joint': 'Head',     'laterality': False}],
-                                             'PosY': [{'joint': 'LeftHand', 'laterality': True},
-                                                      {'joint': 'Head',     'laterality': False}],
-                                             'PosZ': [{'joint': 'LeftHand', 'laterality': True},
-                                                      {'joint': 'Head',     'laterality': False}]
-                                            }])
+    datatype_joints_list.append(['javelin', {'DistanceX': [{'joint': 'distanceRightHandHead', 'laterality': True}],
+                                             'DistanceY': [{'joint': 'distanceRightHandHead', 'laterality': True}],
+                                             'DistanceZ': [{'joint': 'distanceRightHandHead', 'laterality': True}]
+                                             }])
 
-    datatype_joints_list.append(['align_arm', {'BoundingBoxMinusX': [{'joint': 'RightShoulderRightArmRightForeArmRightHand', 'laterality': True}],
-                                               'BoundingBoxPlusX':  [{'joint': 'RightShoulderRightArmRightForeArmRightHand', 'laterality': True}],
-                                               'BoundingBoxMinusY': [{'joint': 'RightShoulderRightArmRightForeArmRightHand', 'laterality': True}],
-                                               'BoundingBoxPlusY':  [{'joint': 'RightShoulderRightArmRightForeArmRightHand', 'laterality': True}],
-                                               'BoundingBoxMinusZ': [{'joint': 'RightShoulderRightArmRightForeArmRightHand', 'laterality': True}],
-                                               'BoundingBoxPlusZ':  [{'joint': 'RightShoulderRightArmRightForeArmRightHand', 'laterality': True}]
+    datatype_joints_list.append(['align_arm', {'BoundingBoxWidthMean': [{'joint': 'HeadRightShoulderRightArmRightForeArmRightHand', 'laterality': True}],
+                                               'BoundingBoxWidthStd': [{'joint': 'HeadRightShoulderRightArmRightForeArmRightHand', 'laterality': True}]
                                               }])
 
 
@@ -591,8 +606,11 @@ def compute_distance_to_clusters(expert, student, path, begin, end):
     scale = False
     normalise = False
 
+    removed_values = {'leaning': [19],
+                      'align_arm': [15, 9, 8]}
+
     expert_data_repartion = {'good': [x+1 for x in range(10)],
-                     'leaning': [x+1 for x in range(10, 19)],
+                     'leaning': [x+1 for x in range(10, 20)],
                      'javelin': [x+1 for x in range(20, 30)],
                      'align_arm': [x+1 for x in range(30, 40)],
                      'elbow_move': [x+1 for x in range(40, 50)]}
@@ -607,6 +625,17 @@ def compute_distance_to_clusters(expert, student, path, begin, end):
         datatype_joints = problem[1]
 
         expert_sub_data = expert_data[:10] + expert_data[min(expert_data_repartion[problem[0]])-1:max(expert_data_repartion[problem[0]])]
+        full_expert_data = expert_sub_data.copy()
+
+        full_features = data_gathering(full_expert_data, datatype_joints)
+
+        if problem[0] == 'align_arm':
+            del expert_sub_data[15]
+            del expert_sub_data[9]
+            del expert_sub_data[8]
+
+        if problem[0] == 'leaning':
+            del expert_sub_data[19]
 
         for algo, param in algos.items():
             #print(problem[0])
@@ -621,28 +650,15 @@ def compute_distance_to_clusters(expert, student, path, begin, end):
 
         # If the expert data has been scaled, do the same for the student's ones
         if scale:
-            from sklearn.preprocessing import RobustScaler
             scaler = RobustScaler()
             std_features = scaler.fit_transform(std_features)
         # Same for normalising
         if normalise:
-            from sklearn.preprocessing import MinMaxScaler
             min_max_scaler = MinMaxScaler()
             std_features = min_max_scaler.fit_transform(std_features)
 
         # Compute the centroid of the student's features (Euclidean distance for now)
         std_centroid = get_centroid(std_features)
-
-        # For the rest of the algorithm, if there are more than 2 features,
-        # we run the data through a PCA for the next steps
-        if len(model[0].cluster_centers_[0]) > 2:
-            pca = PCA(n_components=2, copy=True)
-            pca.fit(model[2])
-
-            model[2] = pca.transform(model[2])
-            model[0].cluster_centers_ = pca.transform(model[0].cluster_centers_)
-            std_centroid = pca.transform(std_centroid.reshape(1, -1))[0]
-            std_features = pca.transform(std_features)
 
         # Compute the distance from the student's centroid to the expert's ones
         distances_to_centroid = compute_distance(model[0].cluster_centers_, std_centroid)
@@ -662,7 +678,66 @@ def compute_distance_to_clusters(expert, student, path, begin, end):
         # # # # # # # # # # # # # # # # # # # # # # # # # # # #
         #TODO: display numbers of motions in labelled clusters#
         # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-        get_closeness_to_clusters(clusters_label, std_features, model[0].cluster_centers_, problem[0], name=student.name, to_print=False)
+        get_closeness_to_clusters(clusters_label,
+                                  std_features,
+                                  model[0].cluster_centers_,
+                                  problem[0],
+                                  name=student.name,
+                                  to_print=False,
+                                  to_csv=True)
+
+        # Display the closeness of the student's data to each expert cluster
+        mix_res = mix(distances_to_centroid, clusters_label, distance_from_line)
+
+        clusters_names = get_cluster_labels_from_data_repartition(model[0].labels_, model[0].cluster_centers_)
+
+        # For the rest of the algorithm, if there are more than 2 features,
+        # we run the data through a PCA for the next steps
+        # if len(model[0].cluster_centers_[0]) > 2:
+
+        #     # model[2] = normalize(model[2])
+        #     # model[0].cluster_centers_ = normalize(model[0].cluster_centers_)
+        #     # std_centroid = normalize(std_centroid.reshape(1, -1))[0]
+
+        #     pca = PCA(n_components=2, copy=True)
+        #     pca.fit(model[2])
+
+        #     model[2] = pca.transform(model[2])
+        #     full_features = pca.transform(full_features)
+        #     model[0].cluster_centers_ = pca.transform(model[0].cluster_centers_)
+        #     std_centroid = pca.transform(std_centroid.reshape(1, -1))[0]
+        #     std_features = pca.transform(std_features)
+
+        # mixed = np.concatenate((model[2], std_features, model[0].cluster_centers_, std_centroid.reshape(1, -1)), axis=0)
+        # min_max_scaler = MinMaxScaler()
+        # mixed =  min_max_scaler.fit_transform(mixed)
+
+        # model[2] = mixed[0:len(model[2]), :]
+        # std_features = mixed[len(model[2]):len(model[2])+len(std_features), :]
+        # model[0].cluster_centers_ = mixed[len(model[2])+len(std_features):-1, :]
+        # std_centroid = mixed[-1, :]
+
+        clus_prob = ClusteringProblem(problem=problem[0],
+                                      model=model[0], features=full_features,
+                                      labels=expert_data_repartion,
+                                      centroids=model[0].cluster_centers_,
+                                      sil_score=model[1]['ss'],
+                                      clusters_names=clusters_names,
+                                      algo_name=problem[0],
+                                      std_data=std_features,
+                                      std_centroid=get_centroid(std_features),
+                                      distance_to_line=distance_from_line)
+
+        clus_prob.trapezoid = get_trapezoid(model, std_centroid)
+        clus_prob.circles = get_circle(model, std_centroid)
+        clus_prob.std_data = std_features
+
+        clustering_problems.append(clus_prob)
+
+    get_global_closeness_to_good_cluster_2(clustering_problems,
+                                           name=student.name,
+                                           to_print=False,
+                                           to_csv=True)
 
 def rotated_feedback_comparison(expert, student, path, begin, end):
     folders_path = path
@@ -760,12 +835,10 @@ def rotated_feedback_comparison(expert, student, path, begin, end):
 
         # If the expert data has been scaled, do the same for the student's ones
         if scale:
-            from sklearn.preprocessing import RobustScaler
             scaler = RobustScaler()
             std_features = scaler.fit_transform(std_features)
         # Same for normalising
         if normalise:
-            from sklearn.preprocessing import MinMaxScaler
             min_max_scaler = MinMaxScaler()
             std_features = min_max_scaler.fit_transform(std_features)
 
@@ -856,10 +929,15 @@ def take_last_data(path, student, expert, number=9):
 
     return True
 
-def take_specific_data(path, student, expert, begin=0, end=9, verbose=False):
+def take_specific_data(path, student, expert, begin=0, end=9, verbose=False, fullname=True):
 
-    if not student.full_name in os.listdir(path):
-        print(f'ERROR: {student.full_name} not found in {path}.')
+    student_name_to_use = student.full_name
+    if not fullname:
+        student_name_to_use = student.name
+
+    if not student_name_to_use in os.listdir(path):
+        breakpoint()
+        print(f'ERROR: {student_name_to_use} not found in {path}.')
         return False
 
     mixed_path = os.path.normpath(os.path.join(path, 'mixed'))
@@ -871,7 +949,7 @@ def take_specific_data(path, student, expert, begin=0, end=9, verbose=False):
                 print(f'Removed {file}')
             rmtree(os.path.normpath(os.path.join(mixed_path, file)))
 
-    std_path = os.path.normpath(os.path.join(path, student.full_name))
+    std_path = os.path.normpath(os.path.join(path, student_name_to_use))
 
     file_list = os.listdir(std_path)
     file_list = sorted(file_list, key=lambda sin: int(sin.replace(student.name + '_', '').replace('Char00', '')))
@@ -961,110 +1039,53 @@ def test_student_list():
         for problem in datatype_joints_list:
             std_features = data_gathering(student_data, problem[1])
 
-def export_advices_to_xlsx(path):
-    from xlsxwriter import Workbook
-
+def do_all():
     expert = Person(r'', 'aurel', 'Right')
-
-    workbook = Workbook('new_advices_after_rotation.xlsx')
-
+    path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/all_good_students/mixed'
     for student in cst.students_list:
-        print(f'Processing {student.name}...')
-        worksheet = workbook.add_worksheet(student.name)
-        worksheet.merge_range('A1:B1', 'New')
-        worksheet.merge_range('C1:D1', 'Old')
+        only_feedback_new_descriptors(expert, student, path)
+
+def redo_gr1():
+    expert = Person(r'', 'aurel', 'Right')
+    std_list = [ Person(r'', 'DoneauR', 'Right', 'Doneau_Rafael'),
+                 Person(r'', 'CorgniardA', 'Right', 'Corgniard_Antoine'),
+                 Person(r'', 'AubertJ', 'Right', 'Aubert_Julian'),
+                 Person(r'', 'BrouardS', 'Right', 'Brouard_Samuel'),
+                 Person(r'', 'BlanchardA', 'Right', 'Blanchard_Axel'),
+                 Person(r'', 'KherratiY', 'Right', 'Kherrati_Yazid'),
+                 Person(r'', 'BrunetL', 'Right', 'Brunet_Leo'),
+                 Person(r'', 'EuvrardL', 'Right', 'Euvrard_Louis'),
+                 Person(r'', 'RouxelV', 'Right', 'Rouxel_Valentin'),
+                 Person(r'', 'DelhommaisT', 'Right', 'Delhommais_Tony'),
+                 Person(r'', 'DizelC', 'Right', 'Dizel_Corentin'),
+                 Person(r'', 'HuetL', 'Right', 'Huet_Loic'),
+                 Person(r'', 'BouligandC', 'Right', 'Bouligand_Colin'),
+                 Person(r'', 'JonardA', 'Right', 'Jonard_Antoine'),
+                 Person(r'', 'LaghouaoutaY', 'Right', 'Laghouaouta_Youness')]
+    for student in std_list:
+        print(student.full_name)
         for i in range(4):
-            advices = rotated_feedback_comparison(expert, student, path, begin=i*9, end=(i*9)+9)
-            worksheet.write(f'A{i+2}', advices[0])
-            worksheet.write(f'B{i+2}', advices[1])
-
-        print('Done.')
-
-    workbook.close()
-
-    # # test_student_list()
-
-def merge_xlsx():
-    from openpyxl import load_workbook
-    wb_results = load_workbook('csv_test/results_2.xlsx')
-    wb_comparison = load_workbook('new_advices_after_rotation.xlsx')
-
-    for student in cst.students_list:
-        print(f'Processing {student.name}')
-        try:
-            sheet_results = wb_results[student.name[:-1]]
-        except KeyError:
-            sheet_results = wb_results['Saupin']
-        sheet_comparison = wb_comparison[student.name]
-
-        for i in range(3):
-            result_string = sheet_results[f'E{((i+1)*10 + 3)}'].value
-            result_string = result_string.split('/')
-            sheet_comparison[f'C{i+2}'].value = result_string[0]
-            sheet_comparison[f'D{i+2}'].value = result_string[1]
-
-    wb_comparison.save('new_advices_comparison_one_sheet.xlsx')
-
-def one_sheet_xlsx():
-    from openpyxl import Workbook, load_workbook
-    wb_results = load_workbook('csv_test/results_2.xlsx')
-    wb_comparison = load_workbook('new_advices_after_rotation.xlsx')
-    wb_final = Workbook()
-    final_sheet = wb_final.active
-
-    final_sheet[f'A1'].value = 'Nom'
-    final_sheet[f'B1'].value = 'Old'
-    final_sheet[f'D1'].value = 'New'
-
-
-    for row, student in enumerate(cst.students_list):
-        good = "True"
-
-        # writting offset
-        wo = 3 * row
-
-        print(f'Processing {student.name}')
-        try:
-            sheet_results = wb_results[student.name[:-1]]
-        except KeyError:
-            sheet_results = wb_results['Saupin']
-        sheet_comparison = wb_comparison[student.name]
-
-
-        final_sheet[f'A{1 + 1 + wo}'].value = student.name
-
-        for i in range(3):
-            result_string = sheet_results[f'E{((i+1)*10 + 3)}'].value
-            result_string = result_string.split('/')
-            comparison_string = sheet_comparison[f'A{i+2}:B{i+2}']
-            comparison_string = [sheet_comparison[f'A{i+2}'].value, sheet_comparison[f'B{i+2}'].value]
-
-            result_string[0] = result_string[0].replace("_", " ").replace("Me\xa0: ", "").lower().strip()
-            result_string[1] = result_string[1].replace("_", " ").replace("Me\xa0: ", "").lower().strip()
-            comparison_string[0] = comparison_string[0].replace("_", " ").replace("Me : ", "").lower().strip()
-            comparison_string[1] = comparison_string[1].replace("_", " ").replace("Me : ", "").lower().strip()
-
-            final_sheet[f'B{i + 1 + 1 + wo}'].value = result_string[0]
-            final_sheet[f'C{i + 1 + 1 + wo}'].value = result_string[1]
-            final_sheet[f'D{i + 1 + 1 + wo}'].value = comparison_string[0]
-            final_sheet[f'E{i + 1 + 1 + wo}'].value = comparison_string[1]
-
-            if result_string[0] != comparison_string[0] or result_string[1] != comparison_string[1]:
-                good = "False"
-
-        final_sheet[f'G{wo + 3}'].value = good
-
-
-    wb_final.save('blblbl.xlsx')
+            print(f'Jeu {i}')
+            print(f'{i*9} - {(i*9)+9}')
+            compute_distance_to_clusters(expert,
+                                         student,
+                                         r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/redo_students_gr1/descriptors/',
+                                         i*9,
+                                         (i*9)+9,
+                                         fullname=False)
 
 if __name__ == '__main__':
     expert = Person(r'', 'aurel', 'Right')
-    student = Person(r'', 'JonardA', 'Right', 'Jonard_Antoine')
-    path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/students/mixed'
-    path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/test/noneed_rotated/mixed'
-    # path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/clarete/mixed'
-    # only_feedback(expert, student, path)
-    only_feedback_new_descriptors(expert, student, path)
+    student = Person(r'', 'LabEC', 'Right', 'LabEC')
+    #path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/visitelabo/mixed'
+    #path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/students_2/mixed'
+    path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/labexpress/mixed'
+    #path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/test/noneed_rotated/mixed'
+    #only_feedback(expert, student, path)
+    redo_gr1()
+    #merge_same_names_xlsx()
+
+    # only_feedback_new_descriptors(expert, student, path)
 
     # export_advices_to_xlsx(path)
     # one_sheet_xlsx()
