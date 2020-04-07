@@ -8,8 +8,8 @@ def import_data(path, import_find):
 
     # Gathering the data
     # If it's a list, then we have to import multiple people's data
-    if isinstance(import_find[0], list):
-        for to_import in import_find[0]:
+    if isinstance(import_find, list):
+        for to_import in import_find:
             original_data.extend(json_import(path, to_import))
     # Else, it's just a name, so we import their data
     else:

@@ -15,6 +15,9 @@ from constants import problemes_et_solutions as problems_and_advices
 
 from sklearn.decomposition import PCA
 
+from openpyxl import load_workbook
+from openpyxl.styles import Font, Alignment
+
 @dataclass
 class Circle:
     def __init__(self, center, radius, limits=None, is_good=False):
@@ -68,6 +71,9 @@ def intra_cluster_dst(centroid, points):
 
 def compute_distance(centroids, feature):
     return [np.linalg.norm(feature - centroid) for centroid in centroids]
+
+def compute_single_distance(pt1, pt2):
+    return np.linalg.norm(pt1 - pt2)
 
 def dst_pts(pt1, pt2):
     if len(pt1) == 1:
@@ -332,7 +338,7 @@ def get_global_closeness_to_good_cluster(cps, removed_values, name='', to_print=
 
         breakpoint()
 
-def get_global_closeness_to_good_cluster_2(cps, name='', to_print=True, to_csv=True):
+def get_global_closeness_to_good_cluster_2(cps, name='', to_print=True, to_csv=True, to_xlsx=False):
     # Take all features from 4 problems
     # normalise by mean for each dimension for each problem
     # merge features vectors
@@ -359,6 +365,7 @@ def get_global_closeness_to_good_cluster_2(cps, name='', to_print=True, to_csv=T
 
     merged_vectors = {'expert_good': None, 'student': None}
 
+
     # 3 outputs : expert good values / bad values, std values
     for key in merged_vectors.keys():
         merged_features = []
@@ -371,19 +378,77 @@ def get_global_closeness_to_good_cluster_2(cps, name='', to_print=True, to_csv=T
 
         merged_vectors[key] = merged_features.copy()
 
+    final_components = len(merged_vectors['expert_good'][0])
+    dst = {}
 
-    pca = PCA(n_components=2, copy=True)
-    full_data = np.concatenate((merged_vectors['expert_good'], merged_vectors['student']))
-    pca.fit(full_data)
+    for i in range(2, final_components + 1):
+        pca = PCA(n_components=i, copy=True)
+        full_data = np.concatenate((merged_vectors['expert_good'], merged_vectors['student']))
+        pca.fit(full_data)
 
-    merged_vectors['expert_good'] = pca.transform(merged_vectors['expert_good'])
-    merged_vectors['student'] = pca.transform(merged_vectors['student'])
+        merged_vectors_2 = {}
 
-    expert_centroid = get_centroid(merged_vectors['expert_good'])
+        merged_vectors_2['expert_good'] = pca.transform(merged_vectors['expert_good'])
+        merged_vectors_2['student'] = pca.transform(merged_vectors['student'])
 
-    dst = [dst_pts(expert_centroid, x) for x in merged_vectors['student']]
+        expert_centroid = get_centroid(merged_vectors_2['expert_good'])
 
-    return dst
+        dst[i] = [compute_single_distance(expert_centroid, x) for x in merged_vectors_2['student']]
+
+
+    if to_print:
+        pass
+
+    if to_csv:
+        path_to_file = f'dst_all_pca_2_{final_components}_output.csv'
+        if name:
+            path_to_file = f'{name}_' + path_to_file
+        path_to_file = 'csv_test/' + path_to_file
+
+        with open(path_to_file, 'a', newline='') as out_csv:
+            data_distance_writer = csv.writer(out_csv, delimiter=',', quotechar='"')
+            data_distance_writer.writerow(['Distance to good'])
+            data_distance_writer.writerow(['PCA Value'])
+            data_distance_writer.writerow(list(dst.keys()))
+            transposed_data = list(zip(*dst.values()))
+            for i, row in enumerate(transposed_data):
+                # csv_writer needs a list to write
+                if i > 0 and i % 9 == 0:
+                    data_distance_writer.writerow([''])
+                data_distance_writer.writerow(row)
+
+    if to_xlsx:
+        wb = load_workbook(filename='csv_test/distance_pca/results_3.xlsx')
+        ws = wb[name]
+
+        ws['O1'].value = 'All merged, distance to expert\'s good cluster'
+        font_style = Font(size='14')
+        cell_alignment = Alignment(horizontal='center')
+        ws['O1'].font = font_style
+        ws['O1'].alignment = cell_alignment
+        ws.merge_cells('O1:V1')
+        ws['O2'].value = 'PCA Value'
+        ws['O2'].font = font_style
+        ws['O2'].alignment = cell_alignment
+        ws.merge_cells('O2:V2')
+        for i, key in enumerate(dst.keys()):
+            ws[f'{chr(79+i)}3'].font = font_style
+            ws[f'{chr(79+i)}3'].alignment = cell_alignment
+            ws[f'{chr(79+i)}3'].value = key
+
+        row_idx = 3
+        transposed_data = list(zip(*dst.values()))
+
+        for i, row in enumerate(transposed_data):
+
+            row_idx += 1
+            if i > 0 and i % 9 == 0:
+                row_idx += 1
+
+            for j, val in enumerate(row):
+                ws[f'{chr(79+j)}{row_idx}'].value = val
+
+        wb.save('csv_test/distance_pca/results_3.xlsx')
 
 
 

@@ -89,7 +89,7 @@ class Ui_MainWindow(object):
         self.listwidget_people_to_process.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self.link()
 
-        self.label_folder_path.setText(r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/Speed/testBB/')
+        self.label_folder_path.setText(r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/redo_all_students')
         self.original_data = []
         self.person_to_process = []
 
@@ -161,7 +161,6 @@ class Ui_MainWindow(object):
         for datatype in datatypes_names:
             self.combobox_datatype.addItem(datatype)
 
-        print(self.original_data[0].get_joint_list())
         for joint in self.original_data[0].get_joint_list():
             self.listwidget_joints.addItem(joint)
 

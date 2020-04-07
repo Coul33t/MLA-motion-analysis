@@ -13,7 +13,7 @@ import os
 from collections import OrderedDict
 
 from tools import file_name_gathering, natural_keys, merge_dict
-from motion_classes.motion import *
+from motion_classes.motion import Motion
 
 
 def return_files(f, str_to_check=[''], present=True):

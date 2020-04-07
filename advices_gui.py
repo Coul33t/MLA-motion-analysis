@@ -157,8 +157,17 @@ class Ui_MainWindow(object):
     def compare_values(self):
         self.compared = compare(self.features)
         self.listwidget_diff.clear()
+        self.listwidget_diff.addItem(f'Difference between {self.label_student.text()} and {self.label_expert.text()}:')
+        self.listwidget_diff.addItem(f' ')
         for joint_and_datatype, value in self.compared.items():
-            self.listwidget_diff.addItem(f'{joint_and_datatype}: {value}')
+            if len(joint_and_datatype) > 20:
+                datatype = joint_and_datatype.split(' ')[1]
+                joint_and_datatype = joint_and_datatype[:20] + '... ' + datatype
+            self.listwidget_diff.addItem(f'{joint_and_datatype}: {value[0]:.5f}')
+
+        self.listwidget_advices.addItem('Conseils sur le geste :')
+        self.listwidget_advices.addItem('Votre coude ne doit pas bouger lors du lancer.')
+        self.listwidget_advices.addItem('Votre bras doit rester aligné (de la main à l\'épaule) lorsque vous lancez.')
 
 
     def add_combination(self):

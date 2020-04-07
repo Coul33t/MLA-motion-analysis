@@ -1,5 +1,4 @@
-from motion_classes.datatype import *
-import pdb
+from motion_classes.datatype import Datatype
 
 class Motion():
     def __init__(self, name='NONE'):

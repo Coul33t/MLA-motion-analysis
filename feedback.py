@@ -1,5 +1,5 @@
 import os
-from shutil import rmtree
+from shutil import rmtree, copytree
 from distutils.dir_util import copy_tree
 
 from sklearn.decomposition import PCA
@@ -684,7 +684,7 @@ def compute_distance_to_clusters(expert, student, path, begin, end, fullname=Tru
                                   problem[0],
                                   name=student.name,
                                   to_print=False,
-                                  to_csv=True)
+                                  to_csv=False)
 
         # Display the closeness of the student's data to each expert cluster
         mix_res = mix(distances_to_centroid, clusters_label, distance_from_line)
@@ -736,8 +736,9 @@ def compute_distance_to_clusters(expert, student, path, begin, end, fullname=Tru
 
     get_global_closeness_to_good_cluster_2(clustering_problems,
                                            name=student.name,
-                                           to_print=False,
-                                           to_csv=True)
+                                           to_print=True,
+                                           to_csv=False,
+                                           to_xlsx=True)
 
 def rotated_feedback_comparison(expert, student, path, begin, end):
     folders_path = path
@@ -960,7 +961,7 @@ def take_specific_data(path, student, expert, begin=0, end=9, verbose=False, ful
         std_folder = os.path.join(std_path, folder_to_copy)
         if verbose:
             print(f'Copying {folder_to_copy}')
-        copy_tree(std_folder, os.path.join(mixed_path, folder_to_copy))
+        copytree(std_folder, os.path.join(mixed_path, folder_to_copy))
 
     return True
 
@@ -1070,9 +1071,20 @@ def redo_gr1():
             compute_distance_to_clusters(expert,
                                          student,
                                          r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/redo_students_gr1/descriptors/',
-                                         i*9,
-                                         (i*9)+9,
+                                         0,
+                                         36,
                                          fullname=False)
+
+def redo_all():
+    expert = Person(r'', 'aurel', 'Right')
+    for student in cst.new_students_list:
+        print(student.full_name)
+        compute_distance_to_clusters(expert,
+                                        student,
+                                        r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/redo_all_students/',
+                                        0,
+                                        36,
+                                        fullname=False)
 
 if __name__ == '__main__':
     expert = Person(r'', 'aurel', 'Right')
@@ -1082,7 +1094,7 @@ if __name__ == '__main__':
     path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/labexpress/mixed'
     #path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/test/noneed_rotated/mixed'
     #only_feedback(expert, student, path)
-    redo_gr1()
+    redo_all()
     #merge_same_names_xlsx()
 
     # only_feedback_new_descriptors(expert, student, path)
