@@ -1076,16 +1076,16 @@ def redo_gr1():
 
 if __name__ == '__main__':
     expert = Person(r'', 'aurel', 'Right')
-    student = Person(r'', 'LabEC', 'Right', 'LabEC')
+    student = Person(r'', 'RannouP', 'Right', 'Pierre_Rannou')
     #path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/visitelabo/mixed'
     #path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/students_2/mixed'
-    path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/labexpress/mixed'
+    path = r'C:/Nathan/Travail IUT/STAGE/mixed'
     #path = r'C:/Users/quentin/Documents/Programmation/C++/MLA/Data/alldartsdescriptors/test/noneed_rotated/mixed'
     #only_feedback(expert, student, path)
-    redo_gr1()
+    #redo_gr1()
     #merge_same_names_xlsx()
 
-    # only_feedback_new_descriptors(expert, student, path)
+    only_feedback_new_descriptors(expert, student, path)
 
     # export_advices_to_xlsx(path)
     # one_sheet_xlsx()
