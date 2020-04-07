@@ -491,7 +491,7 @@ def only_feedback_new_descriptors(expert, student, path, display=True):
         # # # # # # # # # # # # # # # # # # # # # # # # # # # #
         #TODO: display numbers of motions in labelled clusters#
         # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-        get_closeness_to_clusters(clusters_label, std_features, model[0].cluster_centers_, problem[0])
+        get_closeness_to_clusters(clusters_label, std_features, model[0].cluster_centers_, problem[0], to_csv=False)
 
         # Display the closeness of the student's data to each expert cluster
         mix_res = mix(distances_to_centroid, clusters_label, distance_from_line)
