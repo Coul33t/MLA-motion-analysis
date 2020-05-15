@@ -27,6 +27,16 @@ class Motion():
             return list(joints_set)
         else:
             return None
+    
+    def get_joint_list_datatype(self, name):
+        if self.datatypes:
+            joints_set = set()
+            for _, datatypes in self.datatypes.items():
+                for joint in datatypes.get_joint_list():
+                    joints_set.add(joint)
+            return list(joints_set)
+        else:
+            return None
 
     def get_datatypes_names(self):
         return list(self.datatypes.keys())

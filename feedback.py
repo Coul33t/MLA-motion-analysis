@@ -1,4 +1,5 @@
 import os
+import sys
 from shutil import rmtree
 from distutils.dir_util import copy_tree
 
@@ -25,8 +26,240 @@ import constants as cst
 
 from constants import problemes_et_solutions as problems_and_advices
 
+from PyQt5 import QtCore, QtGui, QtWidgets
+
+
 #TODO: use a dict for removed values, instead of ad-hoc value like now
 #      (see compute_distance_to_clusters for an example)
+
+@dataclass
+class Problem :
+    name : str
+    caracs : list
+    laterality : bool
+
+class Ui_MainWindow(object):
+
+    def on_btn_valider_clicked(self):
+       sys.exit(0)
+
+    def data_path_explorer(self) :
+        explorer = QtWidgets.QFileDialog()
+        explorer.setFileMode(QtWidgets.QFileDialog.Directory)
+        explorer.exec_()
+        self.data_path_edit.setText(explorer.selectedFiles()[0])
+        self.data_path_edit_2.setText(explorer.selectedFiles()[0])
+        return
+
+    def setupUi(self, MainWindow):
+        MainWindow.setObjectName("MainWindow")
+        MainWindow.resize(459, 532)
+        self.tabPrincipal = QtWidgets.QTabWidget(MainWindow)
+        self.tabPrincipal.setGeometry(QtCore.QRect(0, 0, 461, 491))
+        self.tabPrincipal.setTabShape(QtWidgets.QTabWidget.Rounded)
+        self.tabPrincipal.setObjectName("tabPrincipal")
+        self.basicsTab = QtWidgets.QWidget()
+        self.basicsTab.setObjectName("basicsTab")
+        self.pb_box = QtWidgets.QGroupBox(self.basicsTab)
+        self.pb_box.setGeometry(QtCore.QRect(0, 20, 451, 121))
+        self.pb_box.setObjectName("pb_box")
+        self.pb_leaning_check = QtWidgets.QCheckBox(self.pb_box)
+        self.pb_leaning_check.setGeometry(QtCore.QRect(30, 20, 70, 17))
+        self.pb_leaning_check.setObjectName("pb_leaning_check")
+        self.pb_elbow_check = QtWidgets.QCheckBox(self.pb_box)
+        self.pb_elbow_check.setGeometry(QtCore.QRect(30, 40, 101, 17))
+        self.pb_elbow_check.setObjectName("pb_elbow_check")
+        self.pb_arm_check = QtWidgets.QCheckBox(self.pb_box)
+        self.pb_arm_check.setGeometry(QtCore.QRect(30, 60, 101, 17))
+        self.pb_arm_check.setObjectName("pb_arm_check")
+        self.pb_javelin_check = QtWidgets.QCheckBox(self.pb_box)
+        self.pb_javelin_check.setGeometry(QtCore.QRect(30, 80, 70, 17))
+        self.pb_javelin_check.setObjectName("pb_javelin_check")
+        self.data_box = QtWidgets.QGroupBox(self.basicsTab)
+        self.data_box.setGeometry(QtCore.QRect(0, 150, 451, 91))
+        self.data_box.setObjectName("data_box")
+        self.data_path_edit = QtWidgets.QLineEdit(self.data_box)
+        self.data_path_edit.setGeometry(QtCore.QRect(20, 30, 261, 20))
+        self.data_path_edit.setObjectName("data_path_edit")
+        self.btn_parcourir = QtWidgets.QPushButton(self.data_box)
+        self.btn_parcourir.setGeometry(QtCore.QRect(290, 30, 75, 23))
+        self.btn_parcourir.setDefault(False)
+        self.btn_parcourir.setFlat(False)
+        self.btn_parcourir.setObjectName("btn_parcourir")
+        self.msg_data_path = QtWidgets.QLabel(self.data_box)
+        self.msg_data_path.setGeometry(QtCore.QRect(120, 60, 151, 16))
+        self.msg_data_path.setObjectName("msg_data_path")
+        self.tabPrincipal.addTab(self.basicsTab, "")
+        self.advancedTab = QtWidgets.QWidget()
+        self.advancedTab.setObjectName("advancedTab")
+        self.tabSecondaire = QtWidgets.QTabWidget(self.advancedTab)
+        self.tabSecondaire.setGeometry(QtCore.QRect(0, 0, 451, 471))
+        self.tabSecondaire.setObjectName("tabSecondaire")
+        self.algorithmTab = QtWidgets.QWidget()
+        self.algorithmTab.setObjectName("algorithmTab")
+        self.data_treatment_box = QtWidgets.QGroupBox(self.algorithmTab)
+        self.data_treatment_box.setGeometry(QtCore.QRect(0, 10, 441, 141))
+        self.data_treatment_box.setObjectName("data_treatment_box")
+        self.scale_check = QtWidgets.QCheckBox(self.data_treatment_box)
+        self.scale_check.setGeometry(QtCore.QRect(30, 20, 131, 31))
+        self.scale_check.setObjectName("scale_check")
+        self.normalize_check = QtWidgets.QCheckBox(self.data_treatment_box)
+        self.normalize_check.setGeometry(QtCore.QRect(30, 50, 131, 31))
+        self.normalize_check.setObjectName("normalize_check")
+        self.algorithms_box = QtWidgets.QGroupBox(self.algorithmTab)
+        self.algorithms_box.setGeometry(QtCore.QRect(0, 160, 441, 171))
+        self.algorithms_box.setObjectName("algorithms_box")
+        self.comboBox = QtWidgets.QComboBox(self.algorithms_box)
+        self.comboBox.setGeometry(QtCore.QRect(140, 30, 121, 22))
+        self.comboBox.setObjectName("comboBox")
+        self.comboBox.addItem("")
+        self.comboBox.addItem("")
+        self.comboBox.addItem("")
+        self.comboBox.addItem("")
+        self.label_2 = QtWidgets.QLabel(self.algorithms_box)
+        self.label_2.setGeometry(QtCore.QRect(30, 30, 111, 16))
+        self.label_2.setObjectName("label_2")
+        self.label_3 = QtWidgets.QLabel(self.algorithms_box)
+        self.label_3.setGeometry(QtCore.QRect(30, 70, 111, 16))
+        self.label_3.setObjectName("label_3")
+        self.spinBox = QtWidgets.QSpinBox(self.algorithms_box)
+        self.spinBox.setGeometry(QtCore.QRect(150, 70, 42, 22))
+        self.spinBox.setObjectName("spinBox")
+        self.display_box = QtWidgets.QGroupBox(self.algorithmTab)
+        self.display_box.setGeometry(QtCore.QRect(0, 340, 441, 91))
+        self.display_box.setObjectName("display_box")
+        self.display_check = QtWidgets.QCheckBox(self.display_box)
+        self.display_check.setGeometry(QtCore.QRect(30, 30, 131, 31))
+        self.display_check.setObjectName("display_check")
+        self.tabSecondaire.addTab(self.algorithmTab, "")
+        self.descriptorsTab = QtWidgets.QWidget()
+        self.descriptorsTab.setObjectName("descriptorsTab")
+        self.data_path_label = QtWidgets.QLabel(self.descriptorsTab)
+        self.data_path_label.setGeometry(QtCore.QRect(10, 10, 47, 16))
+        self.data_path_label.setObjectName("data_path_label")
+        self.path_explore_button = QtWidgets.QPushButton(self.descriptorsTab)
+        self.path_explore_button.setGeometry(QtCore.QRect(210, 10, 75, 23))
+        self.path_explore_button.setObjectName("path_explore_button")
+        self.load_button = QtWidgets.QPushButton(self.descriptorsTab)
+        self.load_button.setGeometry(QtCore.QRect(290, 10, 111, 23))
+        self.load_button.setObjectName("load_button")
+        self.data_path_edit_2 = QtWidgets.QLineEdit(self.descriptorsTab)
+        self.data_path_edit_2.setGeometry(QtCore.QRect(80, 10, 113, 20))
+        self.data_path_edit_2.setObjectName("data_path_edit_2")
+        self.descriptor_label = QtWidgets.QLabel(self.descriptorsTab)
+        self.descriptor_label.setGeometry(QtCore.QRect(10, 50, 61, 21))
+        self.descriptor_label.setObjectName("descriptor_label")
+        self.descriptor_box = QtWidgets.QComboBox(self.descriptorsTab)
+        self.descriptor_box.setGeometry(QtCore.QRect(80, 50, 101, 22))
+        self.descriptor_box.setObjectName("descriptor_box")
+        self.add_articulation_button = QtWidgets.QPushButton(self.descriptorsTab)
+        self.add_articulation_button.setGeometry(QtCore.QRect(100, 110, 75, 23))
+        self.add_articulation_button.setObjectName("add_articulation_button")
+        self.articulation_display = QtWidgets.QTextBrowser(self.descriptorsTab)
+        self.articulation_display.setGeometry(QtCore.QRect(190, 50, 241, 141))
+        self.articulation_display.setObjectName("articulation_display")
+        self.lateralite_check = QtWidgets.QCheckBox(self.descriptorsTab)
+        self.lateralite_check.setGeometry(QtCore.QRect(250, 200, 70, 17))
+        self.lateralite_check.setObjectName("lateralite_check")
+        self.textBrowser_2 = QtWidgets.QTextBrowser(self.descriptorsTab)
+        self.textBrowser_2.setGeometry(QtCore.QRect(0, 240, 241, 141))
+        self.textBrowser_2.setObjectName("textBrowser_2")
+        self.defaut_name_edit = QtWidgets.QLineEdit(self.descriptorsTab)
+        self.defaut_name_edit.setGeometry(QtCore.QRect(250, 260, 181, 20))
+        self.defaut_name_edit.setObjectName("defaut_name_edit")
+        self.add_button = QtWidgets.QPushButton(self.descriptorsTab)
+        self.add_button.setGeometry(QtCore.QRect(250, 360, 75, 23))
+        self.add_button.setObjectName("add_button")
+        self.defaut_name_label = QtWidgets.QLabel(self.descriptorsTab)
+        self.defaut_name_label.setGeometry(QtCore.QRect(250, 240, 81, 16))
+        self.defaut_name_label.setObjectName("defaut_name_label")
+        self.tabSecondaire.addTab(self.descriptorsTab, "")
+        self.tab = QtWidgets.QWidget()
+        self.tab.setObjectName("tab")
+        self.defauts_treeView = QtWidgets.QTreeWidget(self.tab)
+        self.defauts_treeView.setGeometry(QtCore.QRect(0, 30, 441, 411))
+        self.defauts_treeView.setObjectName("defauts_treeView")
+        self.defauts_treeView.setHeaderLabel("Defauts")
+
+        leaning = QtWidgets.QTreeWidgetItem(self.defauts_treeView, ["Leaning"])
+        meanSpeed = QtWidgets.QTreeWidgetItem(leaning, ["Mean Speed"])
+        QtWidgets.QTreeWidgetItem(meanSpeed, ["Left Shoulder"])
+        QtWidgets.QTreeWidgetItem(meanSpeed, ["Right Shoulder"])
+
+        elbowMove = QtWidgets.QTreeWidgetItem(self.defauts_treeView, ["Elbow Move"])
+        meanSpeed = QtWidgets.QTreeWidgetItem(elbowMove, ["Mean Speed"])
+        QtWidgets.QTreeWidgetItem(meanSpeed, ["Left Arm"])
+        QtWidgets.QTreeWidgetItem(meanSpeed, ["Right Arm"])
+
+        javelin = QtWidgets.QTreeWidgetItem(self.defauts_treeView, ["Javelin"])
+        distanceX = QtWidgets.QTreeWidgetItem(javelin, ["Distance X"])
+        QtWidgets.QTreeWidgetItem(distanceX, ["Distance Right Hand - Head"])
+        distanceY = QtWidgets.QTreeWidgetItem(javelin, ["Distance Y"])
+        QtWidgets.QTreeWidgetItem(distanceY, ["Distance Right Hand - Head"])
+        distanceZ = QtWidgets.QTreeWidgetItem(javelin, ["Distance Z"])
+        QtWidgets.QTreeWidgetItem(distanceZ, ["Distance Right Hand - Head"])
+
+        alignArm = QtWidgets.QTreeWidgetItem(self.defauts_treeView, ["Align Arm"])
+        boundingBowWithMean = QtWidgets.QTreeWidgetItem(alignArm, ["Bounding Box with Mean"])
+        QtWidgets.QTreeWidgetItem(boundingBowWithMean, ["Head - Right Shoulder - Right Arm - Right Forearm - RightHand"])
+        boundingBoxWidthStd = QtWidgets.QTreeWidgetItem(alignArm, ["Bounding Box with std"])
+        QtWidgets.QTreeWidgetItem(boundingBoxWidthStd, ["Head - Right Shoulder - Right Arm - Right Forearm - RightHand"])
+
+        self.label = QtWidgets.QLabel(self.tab)
+        self.label.setGeometry(QtCore.QRect(10, 10, 91, 16))
+        self.label.setObjectName("label")
+        self.tabSecondaire.addTab(self.tab, "")
+        self.tabPrincipal.addTab(self.advancedTab, "")
+        self.btn_valider = QtWidgets.QPushButton(MainWindow)
+        self.btn_valider.setGeometry(QtCore.QRect(370, 500, 75, 23))
+        self.btn_valider.setObjectName("btn_valider")
+
+        self.retranslateUi(MainWindow)
+        self.tabPrincipal.setCurrentIndex(0)
+        self.tabSecondaire.setCurrentIndex(0)
+        QtCore.QMetaObject.connectSlotsByName(MainWindow)
+        self.btn_valider.clicked.connect(self.on_btn_valider_clicked)
+        self.btn_parcourir.clicked.connect(self.data_path_explorer)
+        self.path_explore_button.clicked.connect(self.data_path_explorer)
+
+    def retranslateUi(self, MainWindow):
+        _translate = QtCore.QCoreApplication.translate
+        MainWindow.setWindowTitle(_translate("MainWindow", "MLA Settings"))
+        self.pb_box.setTitle(_translate("MainWindow", "Problemes a observer"))
+        self.pb_leaning_check.setText(_translate("MainWindow", "Leaning"))
+        self.pb_elbow_check.setText(_translate("MainWindow", "Elbow Move"))
+        self.pb_arm_check.setText(_translate("MainWindow", "Arm Alignment"))
+        self.pb_javelin_check.setText(_translate("MainWindow", "Javelin"))
+        self.data_box.setTitle(_translate("MainWindow", "Acces aux donnees"))
+        self.btn_parcourir.setText(_translate("MainWindow", "Parcourir..."))
+        self.msg_data_path.setText(_translate("MainWindow", "Chemin vers le dossier \"mixed\""))
+        self.tabPrincipal.setTabText(self.tabPrincipal.indexOf(self.basicsTab), _translate("MainWindow", "Basique"))
+        self.data_treatment_box.setTitle(_translate("MainWindow", "Traitement des donnees"))
+        self.scale_check.setText(_translate("MainWindow", "Scale"))
+        self.normalize_check.setText(_translate("MainWindow", "Normalize"))
+        self.algorithms_box.setTitle(_translate("MainWindow", "Algorithmes"))
+        self.comboBox.setItemText(0, _translate("MainWindow", "k-means"))
+        self.comboBox.setItemText(1, _translate("MainWindow", "option 2"))
+        self.comboBox.setItemText(2, _translate("MainWindow", "option 3"))
+        self.comboBox.setItemText(3, _translate("MainWindow", "option 4"))
+        self.label_2.setText(_translate("MainWindow", "Algorithme a utiliser :"))
+        self.label_3.setText(_translate("MainWindow", "Nombre de centroides :"))
+        self.display_box.setTitle(_translate("MainWindow", "Affichage"))
+        self.display_check.setText(_translate("MainWindow", "Afficher les graphes"))
+        self.tabSecondaire.setTabText(self.tabSecondaire.indexOf(self.algorithmTab), _translate("MainWindow", "Algorithmes"))
+        self.data_path_label.setText(_translate("MainWindow", "Chemin :"))
+        self.path_explore_button.setText(_translate("MainWindow", "Parcourir..."))
+        self.load_button.setText(_translate("MainWindow", "Charger les donnees"))
+        self.descriptor_label.setText(_translate("MainWindow", "Descripteur :"))
+        self.add_articulation_button.setText(_translate("MainWindow", "Ajouter"))
+        self.lateralite_check.setText(_translate("MainWindow", "Lateralite"))
+        self.add_button.setText(_translate("MainWindow", "Ajouter"))
+        self.defaut_name_label.setText(_translate("MainWindow", "Nom du defaut :"))
+        self.tabSecondaire.setTabText(self.tabSecondaire.indexOf(self.descriptorsTab), _translate("MainWindow", "Descripteurs"))
+        self.label.setText(_translate("MainWindow", "Liste des defauts :"))
+        self.tabSecondaire.setTabText(self.tabSecondaire.indexOf(self.tab), _translate("MainWindow", "Resume"))
+        self.tabPrincipal.setTabText(self.tabPrincipal.indexOf(self.advancedTab), _translate("MainWindow", "Avance"))
+        self.btn_valider.setText(_translate("MainWindow", "Valider"))
 
 def import_data(path, import_find):
     original_data = []
@@ -357,6 +590,13 @@ def only_feedback(expert, student, path):
     plot_all_defaults(clustering_problems, only_centroids=False)
 
 def only_feedback_new_descriptors(expert, student, path, display=True):
+
+    app = QtWidgets.QApplication(sys.argv)
+    MainWindow = QtWidgets.QMainWindow()
+    ui = Ui_MainWindow()
+    ui.setupUi(MainWindow)
+    MainWindow.show()
+
     folders_path = path
     if folders_path.split('/')[-1] == 'mixed':
         folders_path = "/".join(path.split('/')[:-1])
@@ -387,20 +627,24 @@ def only_feedback_new_descriptors(expert, student, path, display=True):
     datatype_joints_list.append(['leaning', {'MeanSpeed': [{'joint': 'LeftShoulder', 'laterality': False},
                                                            {'joint': 'RightShoulder', 'laterality': False}]
                                 }])
+    # datatype_joints_list.append(problem('leaning', [{'MeanSpeed' : 'LeftShoulder'}, {'MeanSpeed' : 'RightShoulder'}], True))
 
     datatype_joints_list.append(['elbow_move', {'MeanSpeed': [{'joint': 'LeftArm', 'laterality': True},
                                                               {'joint': 'LeftShoulder', 'laterality': True}]
                                 }])
+    # datatype_joints_list.append(problem('elbow_move', [{'MeanSpeed' :'RightArm'}, {'MeanSpeed' :'LeftArm'}], True))
 
     datatype_joints_list.append(['javelin', {'DistanceX': [{'joint': 'distanceRightHandHead', 'laterality': True}],
                                              'DistanceY': [{'joint': 'distanceRightHandHead', 'laterality': True}],
                                              'DistanceZ': [{'joint': 'distanceRightHandHead', 'laterality': True}]
                                              }])
+    # datatype_joints_list.append(problem('javelin', [{'DistanceX' :'distanceRightHandHead'}, {'DistanceY' :'distanceRightHandHead'}, {'DistanceZ' :'distanceRightHandHead'}], True))
 
     datatype_joints_list.append(['align_arm', {'BoundingBoxWidthMean': [{'joint': 'HeadRightShoulderRightArmRightForeArmRightHand', 'laterality': True}],
                                                'BoundingBoxWidthStd': [{'joint': 'HeadRightShoulderRightArmRightForeArmRightHand', 'laterality': True}]
                                               }])
-
+    # datatype_joints_list.append(problem('align_arm', [{'BoundingBoxWidthMean' :'HeadRightShoulderRightArmRightForeArmRightHand'},
+    #                                                   {'BoundingBoxWidthStd' :'HeadRightShoulderRightArmRightForeArmRightHand'}], True))
 
 
     # Scaling and normalisaing (or not) the data
@@ -551,8 +795,6 @@ def only_feedback_new_descriptors(expert, student, path, display=True):
     if True:
         expert_bad_data = expert_data[max(expert_data_repartion['good']):]
         good_and_bad_vs_student_all_data(expert_good_data, expert_bad_data, student_data, algos, all_features_to_extract, only_centroids=True)
-
-
 
 def compute_distance_to_clusters(expert, student, path, begin, end, fullname=True):
     folders_path = path
@@ -899,8 +1141,6 @@ def rotated_feedback_comparison(expert, student, path, begin, end):
         clustering_problems.append(clus_prob)
 
     return give_two_advices(clustering_problems)
-
-
 
 def take_last_data(path, student, expert, number=9):
 
