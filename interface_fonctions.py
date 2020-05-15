@@ -1,6 +1,6 @@
 from PyQt5 import QtCore, QtWidgets, QtGui
 
-from data_import import json_import
+from data_import import *
 from tools import Person
 from shutil import rmtree
 from distutils.dir_util import copy_tree
@@ -28,6 +28,12 @@ import constants as cst
 
 from constants import problemes_et_solutions as problems_and_advices
 
+@dataclass
+class Problem :
+    name : str
+    caracs : list
+    laterality : bool
+
 def get_motion(path, import_find) :
     original_data = json_import(path, import_find)
     # Gathering the data
@@ -52,8 +58,33 @@ def get_joint_list(path, import_find, datatype) :
 def get_datatypes_names(path, import_find) :
     original_data = get_motion(path, import_find)
     return original_data.get_datatypes_names()
-    
-def only_feedback_new_descriptors(expert, student, path, display=True):
+
+def import_data(path, import_find):
+    original_data = []
+
+    # Gathering the data
+    # If it's a list, then we have to import multiple people's data
+    if isinstance(import_find[0], list):
+        for to_import in import_find[0]:
+            original_data.extend(json_import(path, to_import))
+    # Else, it's just a name, so we import their data
+    else:
+        original_data = json_import(path, import_find)
+
+    if not original_data:
+        print('ERROR: no data found (check your names).')
+        return
+
+    return original_data
+
+def only_feedback_new_descriptors(expert, student, path, datatype_joints_list, expert_data_repartion, display=True):
+
+
+    expert_data_repartion['good'] = [x+1 for x in range(10)]
+    expert_data_repartion['leaning'] = [x+1 for x in range(10, 19)]
+    expert_data_repartion['javelin'] = [x+1 for x in range(20, 30)]
+    expert_data_repartion['align_arm'] = [x+1 for x in range(30, 40)]
+    expert_data_repartion['elbow_move'] = [x+1 for x in range(40, 50)]
 
     folders_path = path
     if folders_path.split('/')[-1] == 'mixed':
@@ -75,46 +106,12 @@ def only_feedback_new_descriptors(expert, student, path, display=True):
     for motion in student_data:
         motion.laterality = student.laterality
 
-    # List of datatypes and joint to process
-    # default to check: {Descriptor: [{joint, laterality or not (check left for lefthanded and vice versa)},
-    #                                  other joint, laterality or not}],
-    #                    Other descriptor: [{joint, laterality or not}]
-    #                   }
-    datatype_joints_list = []
-
-    datatype_joints_list.append(['leaning', {'MeanSpeed': [{'joint': 'LeftShoulder', 'laterality': False},
-                                                           {'joint': 'RightShoulder', 'laterality': False}]
-                                }])
-    # datatype_joints_list.append(problem('leaning', [{'MeanSpeed' : 'LeftShoulder'}, {'MeanSpeed' : 'RightShoulder'}], True))
-
-    datatype_joints_list.append(['elbow_move', {'MeanSpeed': [{'joint': 'LeftArm', 'laterality': True},
-                                                              {'joint': 'LeftShoulder', 'laterality': True}]
-                                }])
-    # datatype_joints_list.append(problem('elbow_move', [{'MeanSpeed' :'RightArm'}, {'MeanSpeed' :'LeftArm'}], True))
-
-    datatype_joints_list.append(['javelin', {'DistanceX': [{'joint': 'distanceRightHandHead', 'laterality': True}],
-                                             'DistanceY': [{'joint': 'distanceRightHandHead', 'laterality': True}],
-                                             'DistanceZ': [{'joint': 'distanceRightHandHead', 'laterality': True}]
-                                             }])
-    # datatype_joints_list.append(problem('javelin', [{'DistanceX' :'distanceRightHandHead'}, {'DistanceY' :'distanceRightHandHead'}, {'DistanceZ' :'distanceRightHandHead'}], True))
-
-    datatype_joints_list.append(['align_arm', {'BoundingBoxWidthMean': [{'joint': 'HeadRightShoulderRightArmRightForeArmRightHand', 'laterality': True}],
-                                               'BoundingBoxWidthStd': [{'joint': 'HeadRightShoulderRightArmRightForeArmRightHand', 'laterality': True}]
-                                              }])
-    # datatype_joints_list.append(problem('align_arm', [{'BoundingBoxWidthMean' :'HeadRightShoulderRightArmRightForeArmRightHand'},
-    #                                                   {'BoundingBoxWidthStd' :'HeadRightShoulderRightArmRightForeArmRightHand'}], True))
-
-
     # Scaling and normalisaing (or not) the data
     # Useful for DBSCAN for example
     scale = False
     normalise = False
 
-    expert_data_repartion = {'good': [x+1 for x in range(10)],
-                     'leaning': [x+1 for x in range(10, 19)],
-                     'javelin': [x+1 for x in range(20, 30)],
-                     'align_arm': [x+1 for x in range(30, 40)],
-                     'elbow_move': [x+1 for x in range(40, 50)]}
+
 
     # Algorithm(s) to use
     algos = {'k-means': {'n_clusters': 2}}

@@ -590,13 +590,6 @@ def only_feedback(expert, student, path):
     plot_all_defaults(clustering_problems, only_centroids=False)
 
 def only_feedback_new_descriptors(expert, student, path, display=True):
-
-    app = QtWidgets.QApplication(sys.argv)
-    MainWindow = QtWidgets.QMainWindow()
-    ui = Ui_MainWindow()
-    ui.setupUi(MainWindow)
-    MainWindow.show()
-
     folders_path = path
     if folders_path.split('/')[-1] == 'mixed':
         folders_path = "/".join(path.split('/')[:-1])

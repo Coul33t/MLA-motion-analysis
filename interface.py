@@ -16,30 +16,31 @@ class Ui_MainWindow(object):
 
     student = Person(r'', 'RannouP', 'Right', 'Pierre_Rannou')
     liste_descripteurs = []
+    expert_data_repartion = {}
     def initialise(self) :
         leaning = QtWidgets.QTreeWidgetItem(self.defauts_treeView, ["Leaning"])
-        meanSpeed = QtWidgets.QTreeWidgetItem(leaning, ["Mean Speed"])
-        QtWidgets.QTreeWidgetItem(meanSpeed, ["Left Shoulder", "True"])
-        QtWidgets.QTreeWidgetItem(meanSpeed, ["Right Shoulder", "True"])
+        meanSpeed = QtWidgets.QTreeWidgetItem(leaning, ["MeanSpeed"])
+        QtWidgets.QTreeWidgetItem(meanSpeed, ["LeftShoulder", "False"])
+        QtWidgets.QTreeWidgetItem(meanSpeed, ["RightShoulder", "False"])
 
-        elbowMove = QtWidgets.QTreeWidgetItem(self.defauts_treeView, ["Elbow Move"])
-        meanSpeed = QtWidgets.QTreeWidgetItem(elbowMove, ["Mean Speed"])
-        QtWidgets.QTreeWidgetItem(meanSpeed, ["Left Arm", "False"])
-        QtWidgets.QTreeWidgetItem(meanSpeed, ["Right Arm", "False"])
+        elbowMove = QtWidgets.QTreeWidgetItem(self.defauts_treeView, ["Elbow_Move"])
+        meanSpeed = QtWidgets.QTreeWidgetItem(elbowMove, ["MeanSpeed"])
+        QtWidgets.QTreeWidgetItem(meanSpeed, ["LeftArm", "True"])
+        QtWidgets.QTreeWidgetItem(meanSpeed, ["LeftShoulder", "True"])
 
         javelin = QtWidgets.QTreeWidgetItem(self.defauts_treeView, ["Javelin"])
-        distanceX = QtWidgets.QTreeWidgetItem(javelin, ["Distance X"])
-        QtWidgets.QTreeWidgetItem(distanceX, ["Distance Right Hand - Head", "False"])
+        distanceX = QtWidgets.QTreeWidgetItem(javelin, ["DistanceX"])
+        QtWidgets.QTreeWidgetItem(distanceX, ["distanceRightHandHead", "True"])
         distanceY = QtWidgets.QTreeWidgetItem(javelin, ["Distance Y"])
-        QtWidgets.QTreeWidgetItem(distanceY, ["Distance Right Hand - Head", "False"])
+        QtWidgets.QTreeWidgetItem(distanceY, ["distanceRightHandHead", "True"])
         distanceZ = QtWidgets.QTreeWidgetItem(javelin, ["Distance Z"])
-        QtWidgets.QTreeWidgetItem(distanceZ, ["Distance Right Hand - Head", "False"])
+        QtWidgets.QTreeWidgetItem(distanceZ, ["distanceRightHandHead", "True"])
 
-        alignArm = QtWidgets.QTreeWidgetItem(self.defauts_treeView, ["Align Arm"])
-        boundingBowWithMean = QtWidgets.QTreeWidgetItem(alignArm, ["Bounding Box with Mean"])
-        QtWidgets.QTreeWidgetItem(boundingBowWithMean, ["Head - Right Shoulder - Right Arm - Right Forearm - RightHand", "False"])
-        boundingBoxWidthStd = QtWidgets.QTreeWidgetItem(alignArm, ["Bounding Box with std"])
-        QtWidgets.QTreeWidgetItem(boundingBoxWidthStd, ["Head - Right Shoulder - Right Arm - Right Forearm - RightHand", "False"])
+        alignArm = QtWidgets.QTreeWidgetItem(self.defauts_treeView, ["Align_Arm"])
+        boundingBowWithMean = QtWidgets.QTreeWidgetItem(alignArm, ["BoundingBoxWidthMean"])
+        QtWidgets.QTreeWidgetItem(boundingBowWithMean, ["HeadRightShoulderRightArmRightForeArmRightHand", "True"])
+        boundingBoxWidthStd = QtWidgets.QTreeWidgetItem(alignArm, ["BoundingBoxWidthStd"])
+        QtWidgets.QTreeWidgetItem(boundingBoxWidthStd, ["HeadRightShoulderRightArmRightForeArmRightHand", "True"])
 
         self.btn_valider.clicked.connect(self.on_btn_valider_clicked)
         self.btn_parcourir.clicked.connect(self.data_path_explorer)
@@ -49,6 +50,7 @@ class Ui_MainWindow(object):
         self.add_articulation_button.clicked.connect(self.add_articulation)
         self.add_button.clicked.connect(self.add_new_default)
         self.defaut_name_edit.textEdited.connect(self.activer_add_button)
+        self.articulation_display.currentItemChanged.connect(self.activer_articulation_button)
         self.hide_descriptor_page()
 
     def activer_add_button(self) :
@@ -57,8 +59,31 @@ class Ui_MainWindow(object):
         else : 
             self.add_button.setEnabled(True)
 
+    def activer_articulation_button(self) :
+        self.add_articulation_button.setEnabled(True)
+
     def on_btn_valider_clicked(self):
-        sys.exit(0)
+        expert = Person(r'', 'aurel', 'Right')
+        path = self.data_path_edit_2.text()
+        datatype_joints_list = []
+        root = self.defauts_treeView.invisibleRootItem()
+        for defaut in range (root.childCount()) :
+            defaut_actuel = root.child(defaut) 
+            descripteurs = {}
+            for descripteur in range (defaut_actuel.childCount()) :
+                articulations = []
+                descripteur_actuel = defaut_actuel.child(descripteur)
+                nom = descripteur_actuel.text(0)
+
+                for articulation in range (descripteur_actuel.childCount()) :
+                    articulation_actuelle = descripteur_actuel.child(articulation)
+                    if (articulation_actuelle.text(1) == "False") :
+                        articulations.append({'joint' : articulation_actuelle.text(0), 'laterality' : False})
+                    else :
+                        articulations.append({'joint' : articulation_actuelle.text(0), 'laterality' : True})
+                descripteurs[nom.replace(" ", "")] = articulations
+            datatype_joints_list.append([str.lower(defaut_actuel.text(0)), descripteurs])    
+        only_feedback_new_descriptors(expert, self.student, path, datatype_joints_list, self.expert_data_repartion)
 
     def data_path_explorer(self) :
         explorer = QtWidgets.QFileDialog()
@@ -101,14 +126,28 @@ class Ui_MainWindow(object):
         self.defaut_name_edit.hide()
         self.default_tree_recap.hide()
         self.add_button.hide()
+        self.label_4.hide()
+        self.label_5.hide()
+        self.label_6.hide()
+        self.expert_data_max_index.hide()
+        self.expert_data_min_index.hide()
+
         self.load_button.setEnabled(False)
         self.add_button.setEnabled(False)
+        self.add_articulation_button.setEnabled(False)
 
     def add_articulation(self) :
         self.defaut_name_label.show()
         self.defaut_name_edit.show()
         self.default_tree_recap.show()
         self.add_button.show()
+        self.label_4.show()
+        self.label_5.show()
+        self.label_6.show()
+        self.expert_data_min_index.show()
+        self.expert_data_max_index.show()
+
+        self.add_articulation_button.setEnabled(False)
 
         datatype = self.descriptor_box.currentText()
         articulation = self.articulation_display.currentItem().text()
@@ -128,6 +167,18 @@ class Ui_MainWindow(object):
     def add_new_default(self):
         self.tabSecondaire.setCurrentIndex(2)
         new_default = QtWidgets.QTreeWidgetItem(self.defauts_treeView, [self.defaut_name_edit.text()])
+        root = self.default_tree_recap.invisibleRootItem()
+        for i in range (root.childCount()) :
+            enfant = root.child(i) 
+            descripteur = QtWidgets.QTreeWidgetItem(new_default, [enfant.text(0)])
+            for j in range (enfant.childCount()) :
+                QtWidgets.QTreeWidgetItem(descripteur, [enfant.child(j).text(0), enfant.child(j).text(1)])
+        self.expert_data_repartion[str.lower(self.defaut_name_edit.text())] = [x+1 for x in range(self.expert_data_min_index.value(), self.expert_data_max_index.value())]
+        self.default_tree_recap.clear()
+        self.defaut_name_edit.clear()
+        self.articulation_display.clear()
+        self.descriptor_box.setCurrentIndex(0)
+        self.load_joints_data()
         return
 
     def setupUi(self, MainWindow):
@@ -145,15 +196,19 @@ class Ui_MainWindow(object):
         self.pb_leaning_check = QtWidgets.QCheckBox(self.pb_box)
         self.pb_leaning_check.setGeometry(QtCore.QRect(30, 20, 70, 17))
         self.pb_leaning_check.setObjectName("pb_leaning_check")
+        self.pb_leaning_check.setChecked(True)
         self.pb_elbow_check = QtWidgets.QCheckBox(self.pb_box)
         self.pb_elbow_check.setGeometry(QtCore.QRect(30, 40, 101, 17))
         self.pb_elbow_check.setObjectName("pb_elbow_check")
+        self.pb_elbow_check.setChecked(True)
         self.pb_arm_check = QtWidgets.QCheckBox(self.pb_box)
         self.pb_arm_check.setGeometry(QtCore.QRect(30, 60, 101, 17))
         self.pb_arm_check.setObjectName("pb_arm_check")
+        self.pb_arm_check.setChecked(True)
         self.pb_javelin_check = QtWidgets.QCheckBox(self.pb_box)
         self.pb_javelin_check.setGeometry(QtCore.QRect(30, 80, 70, 17))
         self.pb_javelin_check.setObjectName("pb_javelin_check")
+        self.pb_javelin_check.setChecked(True)
         self.data_box = QtWidgets.QGroupBox(self.basicsTab)
         self.data_box.setGeometry(QtCore.QRect(0, 150, 451, 91))
         self.data_box.setObjectName("data_box")
@@ -266,7 +321,21 @@ class Ui_MainWindow(object):
         self.btn_valider = QtWidgets.QPushButton(MainWindow)
         self.btn_valider.setGeometry(QtCore.QRect(370, 500, 75, 23))
         self.btn_valider.setObjectName("btn_valider")
-
+        self.label_4 = QtWidgets.QLabel(self.descriptorsTab)
+        self.label_4.setGeometry(QtCore.QRect(250, 290, 111, 16))
+        self.label_4.setObjectName("label_4")
+        self.expert_data_min_index = QtWidgets.QSpinBox(self.descriptorsTab)
+        self.expert_data_min_index.setGeometry(QtCore.QRect(310, 310, 42, 22))
+        self.expert_data_min_index.setObjectName("expert_data_min_index")
+        self.expert_data_max_index = QtWidgets.QSpinBox(self.descriptorsTab)
+        self.expert_data_max_index.setGeometry(QtCore.QRect(370, 310, 42, 22))
+        self.expert_data_max_index.setObjectName("expert_data_max_index")
+        self.label_5 = QtWidgets.QLabel(self.descriptorsTab)
+        self.label_5.setGeometry(QtCore.QRect(260, 310, 47, 21))
+        self.label_5.setObjectName("label_5")
+        self.label_6 = QtWidgets.QLabel(self.descriptorsTab)
+        self.label_6.setGeometry(QtCore.QRect(360, 310, 16, 21))
+        self.label_6.setObjectName("label_6")
         self.retranslateUi(MainWindow)
         self.tabPrincipal.setCurrentIndex(0)
         self.tabSecondaire.setCurrentIndex(0)
@@ -307,7 +376,7 @@ class Ui_MainWindow(object):
         self.lateralite_check.setText(_translate("MainWindow", "Latéralité"))
         self.add_button.setText(_translate("MainWindow", "Ajouter"))
         self.defaut_name_label.setText(_translate("MainWindow", "Nom du défaut :"))
-        self.default_tree_recap.headerItem().setText(0, _translate("MainWindow", "Défauts"))
+        self.default_tree_recap.headerItem().setText(0, _translate("MainWindow", "Descripteurs"))
         self.default_tree_recap.headerItem().setText(1, _translate("MainWindow", "Latéralité"))
         self.tabSecondaire.setTabText(self.tabSecondaire.indexOf(self.descriptorsTab), _translate("MainWindow", "Descripteurs"))
         self.label.setText(_translate("MainWindow", "Liste des défauts :"))
@@ -316,6 +385,10 @@ class Ui_MainWindow(object):
         self.btn_valider.setText(_translate("MainWindow", "Valider"))
         self.defauts_treeView.headerItem().setText(0, _translate("MainWindow", "Défauts"))
         self.defauts_treeView.headerItem().setText(1, _translate("MainWindow", "Latéralité"))
+        self.label_4.setText(_translate("MainWindow", "Données de l\'expert :"))
+        self.label_5.setText(_translate("MainWindow", "De l\'index "))
+        self.label_6.setText(_translate("MainWindow", "à"))
+
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
