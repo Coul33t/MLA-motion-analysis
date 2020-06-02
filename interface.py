@@ -270,6 +270,8 @@ class Ui_MainWindow(object):
             boundingBoxWidthStd = QtWidgets.QTreeWidgetItem(alignArm, ["BoundingBoxWidthStd"])
             QtWidgets.QTreeWidgetItem(boundingBoxWidthStd, ["HeadRightShoulderRightArmRightForeArmRightHand", "True"])
 
+            self.centroids_spinBox.setValue(2)
+
             self.pb_arm_check.setChecked(True)
             self.pb_elbow_check.setChecked(True)
             self.pb_javelin_check.setChecked(True)
