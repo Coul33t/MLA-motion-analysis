@@ -34,6 +34,12 @@ class Problem :
     caracs : list
     laterality : bool
 
+def check_path_validity(path) :
+    if path.split('/')[-1] == 'mixed':
+        return True
+    else :
+        return False
+        
 def get_motion(path, import_find) :
     original_data = json_import(path, import_find)
     # Gathering the data
@@ -77,8 +83,9 @@ def import_data(path, import_find):
 
     return original_data
 
-def only_feedback_new_descriptors(expert, student, path, datatype_joints_list, expert_data_repartion, display=True):
+def only_feedback_new_descriptors(expert, student, path, datatype_joints_list, expert_data_repartion, param):
 
+    display = param['display']
 
     expert_data_repartion['good'] = [x+1 for x in range(10)]
     expert_data_repartion['leaning'] = [x+1 for x in range(10, 19)]
@@ -108,13 +115,13 @@ def only_feedback_new_descriptors(expert, student, path, datatype_joints_list, e
 
     # Scaling and normalisaing (or not) the data
     # Useful for DBSCAN for example
-    scale = False
-    normalise = False
+    scale = param['scale']
+    normalise = param['normalise']
 
 
 
     # Algorithm(s) to use
-    algos = {'k-means': {'n_clusters': 2}}
+    algos = param['algos']
 
     clustering_problems = []
 
@@ -241,6 +248,7 @@ def only_feedback_new_descriptors(expert, student, path, datatype_joints_list, e
 
     give_two_advices(clustering_problems)
     plot_all_defaults(clustering_problems, only_centroids=True)
+
 
     if display:
         all_features_to_extract = merge_list_of_dictionnaries([x[1] for x in datatype_joints_list])
