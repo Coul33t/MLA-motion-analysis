@@ -127,7 +127,7 @@ class Ui_MainWindow(object):
             descripteur = QtWidgets.QTreeWidgetItem(new_default, [enfant.text(0)])
             for j in range (enfant.childCount()) :
                 QtWidgets.QTreeWidgetItem(descripteur, [enfant.child(j).text(0), enfant.child(j).text(1)])
-        self.expert_data_repartion[str.lower(self.defaut_name_edit.text())] = [x+1 for x in range(self.expert_data_min_index.value(), self.expert_data_max_index.value())]
+        self.expert_data_repartion[str.lower(self.defaut_name_edit.text())] = [x+1 for x in range(self.expert_data_min_index.value() -1, self.expert_data_max_index.value() -1)]
         self.default_tree_recap.clear()
         self.defaut_name_edit.clear()
         self.articulation_display.clear()
@@ -168,7 +168,7 @@ class Ui_MainWindow(object):
                 param['display'] = self.display_check.isChecked()
                 param['scale'] = self.scale_check.isChecked()
                 param['normalise'] = self.normalize_check.isChecked()
-                param['algos'] = {self.comboBox.currentText() : {'n_clusters' : self.spinBox.value()}}
+                param['algos'] = {self.algo_comboBox.currentText() : {'n_clusters' : self.centroids_spinBox.value()}}
                 return param
 
     def save_defauts(self):
