@@ -231,9 +231,10 @@ class Ui_MainWindow(object):
             explorer = QtWidgets.QFileDialog()
             explorer.setFileMode(QtWidgets.QFileDialog.Directory)
             explorer.exec_()
-            self.data_path_edit.setText(explorer.selectedFiles()[0])
-            self.data_path_edit_2.setText(explorer.selectedFiles()[0])
-            self.load_button.setEnabled(True)
+            if (len(explorer.selectedFiles()) > 0):
+                self.data_path_edit.setText(explorer.selectedFiles()[0])
+                self.data_path_edit_2.setText(explorer.selectedFiles()[0])
+                self.load_button.setEnabled(True)
             return
 
     def refresh_joints_display(self) :
