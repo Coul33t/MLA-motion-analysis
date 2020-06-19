@@ -83,7 +83,7 @@ def import_data(path, import_find):
 
     return original_data
 
-def only_feedback_new_descriptors(expert, student, path, datatype_joints_list, expert_data_repartion, param):
+def only_feedback_new_descriptors(expert, student, path, datatype_joints_list, expert_data_repartion, param, end_msg):
 
     display = param['display']
 
@@ -247,9 +247,9 @@ def only_feedback_new_descriptors(expert, student, path, datatype_joints_list, e
         clustering_problems.append(clus_prob)
 
     give_two_advices(clustering_problems)
+    end_msg.hide()
     plot_all_defaults(clustering_problems, only_centroids=True)
-
-
+    
     if display:
         all_features_to_extract = merge_list_of_dictionnaries([x[1] for x in datatype_joints_list])
         expert_good_data = expert_data[min(expert_data_repartion['good'])-1:max(expert_data_repartion['good'])]
@@ -258,3 +258,5 @@ def only_feedback_new_descriptors(expert, student, path, datatype_joints_list, e
     if True:
         expert_bad_data = expert_data[max(expert_data_repartion['good']):]
         good_and_bad_vs_student_all_data(expert_good_data, expert_bad_data, student_data, algos, all_features_to_extract, only_centroids=True)
+    
+   

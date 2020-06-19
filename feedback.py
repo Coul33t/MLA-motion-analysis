@@ -498,7 +498,7 @@ def only_feedback(expert, student, path):
                      'javelin': [x+1 for x in range(20, 30)],
                      'align_arm': [x+1 for x in range(30, 40)],
                      'elbow_move': [x+1 for x in range(40, 50)]}
-
+    
     # Algorithm(s) to use
     algos = {'k-means': {'n_clusters': 2}}
 
@@ -620,26 +620,20 @@ def only_feedback_new_descriptors(expert, student, path, display=True):
     datatype_joints_list.append(['leaning', {'MeanSpeed': [{'joint': 'LeftShoulder', 'laterality': False},
                                                            {'joint': 'RightShoulder', 'laterality': False}]
                                 }])
-    # datatype_joints_list.append(problem('leaning', [{'MeanSpeed' : 'LeftShoulder'}, {'MeanSpeed' : 'RightShoulder'}], True))
-
+   
     datatype_joints_list.append(['elbow_move', {'MeanSpeed': [{'joint': 'LeftArm', 'laterality': True},
                                                               {'joint': 'LeftShoulder', 'laterality': True}]
                                 }])
-    # datatype_joints_list.append(problem('elbow_move', [{'MeanSpeed' :'RightArm'}, {'MeanSpeed' :'LeftArm'}], True))
-
+    
     datatype_joints_list.append(['javelin', {'DistanceX': [{'joint': 'distanceRightHandHead', 'laterality': True}],
                                              'DistanceY': [{'joint': 'distanceRightHandHead', 'laterality': True}],
                                              'DistanceZ': [{'joint': 'distanceRightHandHead', 'laterality': True}]
                                              }])
-    # datatype_joints_list.append(problem('javelin', [{'DistanceX' :'distanceRightHandHead'}, {'DistanceY' :'distanceRightHandHead'}, {'DistanceZ' :'distanceRightHandHead'}], True))
-
+    
     datatype_joints_list.append(['align_arm', {'BoundingBoxWidthMean': [{'joint': 'HeadRightShoulderRightArmRightForeArmRightHand', 'laterality': True}],
                                                'BoundingBoxWidthStd': [{'joint': 'HeadRightShoulderRightArmRightForeArmRightHand', 'laterality': True}]
                                               }])
-    # datatype_joints_list.append(problem('align_arm', [{'BoundingBoxWidthMean' :'HeadRightShoulderRightArmRightForeArmRightHand'},
-    #                                                   {'BoundingBoxWidthStd' :'HeadRightShoulderRightArmRightForeArmRightHand'}], True))
-
-
+   
     # Scaling and normalisaing (or not) the data
     # Useful for DBSCAN for example
     scale = False

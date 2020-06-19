@@ -64,7 +64,12 @@ class Ui_MainWindow(object):
                     datatype_joints_list.append([str.lower(defaut_actuel.text(0)), descripteurs])    
 
             param = self.gather_parameters_info()    
-            only_feedback_new_descriptors(expert, self.student, path, datatype_joints_list, self.expert_data_repartion, param)
+            end_msg = QtWidgets.QMessageBox()
+            end_msg.setIcon(QtWidgets.QMessageBox.Information)
+            end_msg.setText("L'analyse est en cours, veuillez patienter")
+            end_msg.setWindowTitle("Lancement de l'analyse")
+            end_msg.show()
+            only_feedback_new_descriptors(expert, self.student, path, datatype_joints_list, self.expert_data_repartion, param, end_msg)
         else : 
             error_msg = QtWidgets.QMessageBox()
             error_msg.setIcon(QtWidgets.QMessageBox.Critical)
@@ -192,7 +197,13 @@ class Ui_MainWindow(object):
             data.append([defaut_actuel.text(0), descripteurs])
         with open('defauts.json', "w", encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
-
+        end_msg = QtWidgets.QMessageBox()
+        end_msg.setIcon(QtWidgets.QMessageBox.Information)
+        end_msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+        end_msg.setText("La sauvegarde a bien été effectuée")
+        end_msg.setWindowTitle("Sauvegarde Réussie")
+        end_msg.exec_()
+        
     def load_defauts(self):
         with open('defauts.json', "r") as f:
             data = json.load(f)

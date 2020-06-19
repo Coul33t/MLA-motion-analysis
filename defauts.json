@@ -70,12 +70,12 @@
         }
     ],
     [
-        "Test",
+        "test",
         {
-            "DistanceX": [
+            "BoundingBoxMinusX": [
                 {
-                    "joint": "distanceRightHandHead",
-                    "laterality": false
+                    "joint": "RightShoulderRightArmRightForeArmRightHand",
+                    "laterality": true
                 }
             ]
         }
