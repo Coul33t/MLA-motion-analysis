@@ -63,7 +63,6 @@ def return_data(f, joints_to_append=None):
 
     return full_data
 
-
 def return_data_with_names(f, joints_to_append=None):
     """
         returns a list, containing:

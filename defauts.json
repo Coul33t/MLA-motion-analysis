@@ -1,0 +1,83 @@
+[
+    [
+        "Leaning",
+        {
+            "MeanSpeed": [
+                {
+                    "joint": "LeftShoulder",
+                    "laterality": false
+                },
+                {
+                    "joint": "RightShoulder",
+                    "laterality": false
+                }
+            ]
+        }
+    ],
+    [
+        "Elbow_Move",
+        {
+            "MeanSpeed": [
+                {
+                    "joint": "LeftArm",
+                    "laterality": true
+                },
+                {
+                    "joint": "LeftShoulder",
+                    "laterality": true
+                }
+            ]
+        }
+    ],
+    [
+        "Javelin",
+        {
+            "DistanceX": [
+                {
+                    "joint": "distanceRightHandHead",
+                    "laterality": true
+                }
+            ],
+            "DistanceY": [
+                {
+                    "joint": "distanceRightHandHead",
+                    "laterality": true
+                }
+            ],
+            "DistanceZ": [
+                {
+                    "joint": "distanceRightHandHead",
+                    "laterality": true
+                }
+            ]
+        }
+    ],
+    [
+        "Align_Arm",
+        {
+            "BoundingBoxWidthMean": [
+                {
+                    "joint": "HeadRightShoulderRightArmRightForeArmRightHand",
+                    "laterality": true
+                }
+            ],
+            "BoundingBoxWidthStd": [
+                {
+                    "joint": "HeadRightShoulderRightArmRightForeArmRightHand",
+                    "laterality": true
+                }
+            ]
+        }
+    ],
+    [
+        "test",
+        {
+            "BoundingBoxMinusX": [
+                {
+                    "joint": "RightShoulderRightArmRightForeArmRightHand",
+                    "laterality": true
+                }
+            ]
+        }
+    ]
+]

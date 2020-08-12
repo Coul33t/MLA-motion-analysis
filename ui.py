@@ -7,7 +7,6 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-
 import ui_funcs
 import constants as cst
 
@@ -112,7 +111,6 @@ class Ui_MainWindow(object):
         self.pushbutton_load_datatypes.setText(_translate("MainWindow", "Load data types"))
         self.pushbutton_add_combination.setText(_translate("MainWindow", "Add combination"))
         self.pushbutton_remove_combination.setText(_translate("MainWindow", "Remove combination"))
-
 
     def link(self):
         self.pushbutton_folder.clicked.connect(self.select_folder)
