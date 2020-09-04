@@ -1,6 +1,6 @@
 # Machine learning for the MLA platform
 
-This repo contains data processing and visualization for data from the MLA platform.
+This repo contains data processing and visualization for data from the MLA platform. See https://github.com/Coul33t/MLA-motion-processing for the motion processing part.
 Needs:
 * Python 3.6 (64 bits)
 * Scipy 1.0.0
